@@ -1,15 +1,21 @@
 import {
   Entity,
   Column,
-  PrimaryGeneratedColumn,
   CreateDateColumn,
   UpdateDateColumn,
   BaseEntity,
+  ManyToOne,
+  JoinColumn,
+  OneToMany,
 } from "typeorm";
+import { LikedVideo } from "./LikedVideo";
+import { User } from "./User";
 @Entity()
 export class Video extends BaseEntity {
   // ! la not null
-  @PrimaryGeneratedColumn("uuid")
+  @Column({
+    primary: true,
+  })
   id: string;
 
   @Column()
@@ -21,10 +27,10 @@ export class Video extends BaseEntity {
   @Column()
   userId!: string;
 
-  @Column()
+  @Column({ default: true })
   commentable!: boolean;
 
-  @Column()
+  @Column({ default: "" })
   thumbNailUrl: string;
 
   @Column()
@@ -39,4 +45,11 @@ export class Video extends BaseEntity {
     type: "datetime2",
   })
   updatedAt: Date;
+
+  @ManyToOne(() => User, (user) => user.videos)
+  @JoinColumn({ name: "userId" })
+  readonly user: User;
+
+  @OneToMany(() => LikedVideo, (userLike) => userLike.video)
+  usersLikedConection: LikedVideo[];
 }
