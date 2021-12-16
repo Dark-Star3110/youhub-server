@@ -14,3 +14,4 @@ export const COOKIE_OPTIONS: CookieOptions = {
 
 export const FOLDER_VIDEO_ID = '10YvEEWnUmQYib7F2XoWf0lj0i0gyoG__'
 export const FOLDER_THUMBNAIL_IMAGE = '1XIoZdnySItH2z7H3IjwmgHpEECMGFl69'
+export const FOLDER_PROFILE_IMAGE = '1XIoZdnySItH2z7H3IjwmgHpEECMGFl69'

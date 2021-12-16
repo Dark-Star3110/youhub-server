@@ -6,7 +6,7 @@ import cookieParser from 'cookie-parser'
 // import { test } from './test/db';
 import express from "express";
 import fileUpload from "express-fileupload";
-import { graphqlUploadExpress } from 'graphql-upload'
+import { graphqlUploadExpress } from "graphql-upload";
 import connectMSSQL from "./config/mssql-db/connect";
 import { createApolloServer } from './config/graphql-server/index';
 import routeConfig from './routes';
@@ -15,7 +15,7 @@ import connectMongo from "./config/mongo-db/connect";
 
 
 const app = express();
-// test
+
 connectMSSQL()
 connectMongo()
 
@@ -28,7 +28,6 @@ app.use(fileUpload())
 app.use(graphqlUploadExpress({maxFiles: 1}))
 
 routeConfig(app)
-
 
 app.get("/", (_req, res) => {
   res.send("<h1>Hello World!</h1>");

@@ -61,7 +61,7 @@ export class User extends BaseEntity {
 
   @Field({nullable: true})
   @Column({nullable: true})
-  public image_url?: string;
+  public imageId?: string;
 
   @Field({nullable: true})
   @Column('datetime',{nullable: true})

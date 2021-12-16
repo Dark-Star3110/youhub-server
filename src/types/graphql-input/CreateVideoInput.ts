@@ -1,8 +1,8 @@
-import { Field, InputType } from "type-graphql";
+import { Field, ID, InputType } from "type-graphql";
 
 @InputType()
 export class CreateVideoInput {
-  @Field()
+  @Field(_type=>ID)
   id: string
 
   @Field()
@@ -15,8 +15,8 @@ export class CreateVideoInput {
   commentable: boolean
 
   @Field({nullable: true})
-  thumbnailUrl: string
+  thumbnailId?: string
 
   @Field()
-  size: number
+  size: string
 }

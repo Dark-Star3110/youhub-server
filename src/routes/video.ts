@@ -1,16 +1,15 @@
+import { checkAuth2 } from './../middleware/checkAuth';
 import { Router } from 'express'
 import { UploadedFile } from 'express-fileupload'
 import { Readable } from 'stream'
 import drive from '../config/google-driver-api/index'
+import { FOLDER_VIDEO_ID } from '../constant'
 
 const router = Router()
 
-const FOLDER_VIDEO_ID = '10YvEEWnUmQYib7F2XoWf0lj0i0gyoG__'
-// const FOLDER_THUMBNAIL_IMAGE = '1XIoZdnySItH2z7H3IjwmgHpEECMGFl69'
-
-
 router.post(
   '/upload',
+  checkAuth2,
   async (req, res) => {
     if (!req.files) {
       res.status(400).send({
@@ -35,15 +34,15 @@ router.post(
           mimeType: file.mimetype,
           body: readableStream
         },
-        fields: 'id'
+        fields: 'id,size'
       })
       if (response.data.id) {
         res.json({
           success: true,
           msg: 'successfully',
-          videoId: response.data.id
+          videoId: response.data.id,
+          size: response.data.size
         })
-
       } else {
         res.status(500).json({
           success: false,
