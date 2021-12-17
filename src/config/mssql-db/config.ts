@@ -3,10 +3,10 @@ import entities from "../../entities";
 
 const config: ConnectionOptions = {
   type: "mssql",
-  host: "localhost",
-  username: "sa",
-  password: "0coMatkhau",
-  database: "youHubDB",
+  host: process.env.MSSQL_SERVERNAME,
+  username: process.env.MSSQL_USERNAME,
+  password: process.env.MSSQL_PASSWORD,
+  database: process.env.MSSQL_DBNAME,
   synchronize: true,
   logging: false,
   entities,

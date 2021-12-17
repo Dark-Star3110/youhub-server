@@ -1,2 +1,12 @@
 node_modules/
-dist/
+
+/src/test/
+
+/dist/
+
+/.env
+
+/yarn.lock
+/yarn-error.log
+
+/package-lock.json
