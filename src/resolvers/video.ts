@@ -1,21 +1,19 @@
-import { WatchLater } from './../entities/WatchLater';
-import { LikeVideo } from './../entities/LikeVideo';
-import { DisLikeVideo } from './../entities/DislikeVideo';
-import { UpdateVideoInput } from './../types/graphql-input/UpdateVideoInput';
-import { uploadImg } from './../utils/uploadFile';
-import { FileUpload, GraphQLUpload } from 'graphql-upload';
+import { getThumbnail } from './../utils/getThumbnailmg';
 import { Arg, Ctx, FieldResolver, ID, Mutation, Resolver, Root, UseMiddleware } from "type-graphql";
-import drive from '../config/google-driver-api';
+import { Action, Type } from '../types/Action';
+import { deleteFile } from '../utils/deleteFile';
 import { Catagory } from './../entities/Catagory';
 import { Comment } from './../entities/Comment';
+import { DisLikeVideo } from './../entities/DislikeVideo';
+import { LikeVideo } from './../entities/LikeVideo';
 import { User } from './../entities/User';
 import { Video } from './../entities/Video';
+import { WatchLater } from './../entities/WatchLater';
 import { checkAuth } from './../middleware/checkAuth';
 import { Context } from './../types/Context';
 import { CreateVideoInput } from './../types/graphql-input/CreateVideoInput';
+import { UpdateVideoInput } from './../types/graphql-input/UpdateVideoInput';
 import { VideoMutationResponse } from './../types/graphql-response/VideoMutationResponse';
-import { deleteFile } from '../utils/deleteFile';
-import { Action, Type } from '../types/Action';
 
 @Resolver(_of => Video)
 class VideoResolver {
@@ -24,27 +22,14 @@ class VideoResolver {
   @UseMiddleware(checkAuth)
   async createVideo (
     @Arg('createVideoInput') createVideoInput: CreateVideoInput,
-    @Ctx() {req}: Context,
-    @Arg('fileImg', _type=>GraphQLUpload, {nullable: true}) file?: FileUpload
+    @Ctx() {req}: Context
   ): Promise<VideoMutationResponse> {
     try {
-      if (file) {
-        const result = await uploadImg(file, 'thumbnail')
-        if (!result.error) 
-          createVideoInput.thumbnailId = result.id
-      } else {
-        const response = await drive.files.get({ 
-          fileId: createVideoInput.id,
-          fields: 'thumbnailLink'
-        })
-        if (response.data.thumbnailLink) 
-          createVideoInput.thumbnailId = response.data.thumbnailLink
-      }
       const video = Video.create({
         ...createVideoInput,
         userId: req.user?.id,
       })
-      video.save()
+      await video.save()
       return {
         code: 200,
         success: true,
@@ -52,6 +37,8 @@ class VideoResolver {
         video
       }
     } catch (error) {
+      console.log(error);
+      
       return {
         code: 500,
         success: false,
@@ -125,8 +112,8 @@ class VideoResolver {
           success: false,
           message: 'unauthorized'
         }
-      const thumbnailFileId = video.thumbnailId.indexOf('https://lh3.googleusercontent.com/') !== -1
-      ? video.thumbnailId : null
+      const thumbnailFileId = video.thumbnailUrl?.indexOf('https://lh3.googleusercontent.com/') !== -1
+      ? video.thumbnailUrl : null
       await video.remove()
       await deleteFile(videoId)
       if (thumbnailFileId)
@@ -258,13 +245,22 @@ class VideoResolver {
     }
   }
 
-  @FieldResolver(_return=>String)
-  thumbnailUrl (
+  @FieldResolver(_return=>String, {nullable: true})
+  async thumbnailUrl (
     @Root() parent: Video
-  ): string {
-    return parent.thumbnailId.indexOf('https://lh3.googleusercontent.com/') !== -1
-    ? parent.thumbnailId
-    : `https://drive.google.com/uc?export=view&id=${parent.thumbnailId}`
+  ): Promise<string | undefined> {
+    if (!parent.thumbnailUrl) {
+      try {
+        const thumbnailUrl = await getThumbnail(parent.id) as string | undefined
+        await Video.update({id: parent.id}, {thumbnailUrl})
+        return thumbnailUrl
+      } catch (error) {
+        return
+      }
+    }
+    return parent.thumbnailUrl.indexOf('https://lh3.googleusercontent.com/') !== -1
+    ? parent.thumbnailUrl
+    : `https://drive.google.com/uc?export=view&id=${parent.thumbnailUrl}`
   }
 
   @FieldResolver(_type=>User, {nullable: true})

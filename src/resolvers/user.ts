@@ -264,10 +264,12 @@ class UserResolver {
   }
 
   @FieldResolver(_return=>String)
-  imageId (
+  image_url (
     @Root() parent: User,
   ) {
-    return `https://drive.google.com/uc?export=view&id=${parent.imageId}`
+    if (parent.image_url?.indexOf('http')!==-1)
+      return parent.image_url 
+    else return `https://drive.google.com/uc?export=view&id=${parent.image_url}`
   }
 
   @FieldResolver(_return=>[User], {nullable: true})

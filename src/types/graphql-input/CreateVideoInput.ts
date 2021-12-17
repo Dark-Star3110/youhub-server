@@ -15,7 +15,7 @@ export class CreateVideoInput {
   commentable: boolean
 
   @Field({nullable: true})
-  thumbnailId?: string
+  thumbnailUrl?: string
 
   @Field()
   size: string

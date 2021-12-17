@@ -48,7 +48,7 @@ export class Video extends BaseEntity {
 
   @Field({nullable: true})
   @Column({nullable: true})
-  public thumbnailId: string;
+  public thumbnailUrl?: string;
 
   @Field()
   @Column()

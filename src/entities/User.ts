@@ -33,7 +33,7 @@ export class User extends BaseEntity {
   public readonly id: string;
 
   @Field({nullable: true})
-  @Column({unique: true, nullable: true})
+  @Column({nullable: true})
   public username?: string;
 
   @Column({nullable: true})
@@ -61,7 +61,7 @@ export class User extends BaseEntity {
 
   @Field({nullable: true})
   @Column({nullable: true})
-  public imageId?: string;
+  public image_url?: string;
 
   @Field({nullable: true})
   @Column('datetime',{nullable: true})
