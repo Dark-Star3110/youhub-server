@@ -23,7 +23,7 @@ export const loginSocial = async (input: SocialLogin): Promise<User|null> => {
             socialId: payload.sub,
             firstName: payload.family_name,
             lastName: payload.given_name,
-            image_url: payload.picture
+            imageId: payload.picture
           }).save()
           return newUser
         }
