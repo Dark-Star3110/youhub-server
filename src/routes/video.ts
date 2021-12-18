@@ -23,8 +23,13 @@ router.post(
     let fileImg: UploadedFile | null = null
     
     if (req.files.file instanceof Array) {
-      fileVideo = req.files.file[0]
-      fileImg = req.files.file[1]
+      if (req.files.file[0].mimetype.indexOf('video/')!==-1) {
+        fileVideo = req.files.file[0]
+        fileImg = req.files.file[1]
+      } else {
+        fileVideo = req.files.file[1]
+        fileImg = req.files.file[0]
+      }
     } else {
       fileVideo = req.files.file
     }
