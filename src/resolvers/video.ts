@@ -37,8 +37,8 @@ class VideoResolver {
     @Arg('limit', _type=>Int) limit: number,
     @Arg('cursor', {nullable: true}) cursor?: string,
     @Arg('userId', {nullable: true}) userId?: string,
-    @Arg('user', _type=>[String], {nullable: true}) user?: string[],
-    @Arg('catagory', _type=>[String], {nullable: true}) catagory?: string[],
+    @Arg('user', _type=>[String!], {nullable: true}) user?: string[],
+    @Arg('catagory', _type=>[String!], {nullable: true}) catagory?: string[],
     @Arg('catagoryId', {nullable: true}) catagoryId?: string,
     @Arg('query', {nullable: true}) query?: string
   ): Promise<PaginatedVideos | undefined> {
