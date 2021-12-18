@@ -61,7 +61,7 @@ export class Video extends BaseEntity {
   @CreateDateColumn({
     type: "datetimeoffset",
   })
-  public readonly createdAt: Date;
+  public createdAt: Date;
 
   @Field()
   @UpdateDateColumn({

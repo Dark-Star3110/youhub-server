@@ -1,5 +1,7 @@
+import { VideoCatagory } from './../entities/VideoCatagory';
+import { PaginatedVideos } from './../types/graphql-response/PaginatedPosts';
 import { getThumbnail } from './../utils/getThumbnailmg';
-import { Arg, Ctx, FieldResolver, ID, Mutation, Resolver, Root, UseMiddleware } from "type-graphql";
+import { Arg, Ctx, FieldResolver, ID, Int, Mutation, Query, Resolver, Root, UseMiddleware } from "type-graphql";
 import { Action, Type } from '../types/Action';
 import { deleteFile } from '../utils/deleteFile';
 import { Catagory } from './../entities/Catagory';
@@ -14,10 +16,101 @@ import { Context } from './../types/Context';
 import { CreateVideoInput } from './../types/graphql-input/CreateVideoInput';
 import { UpdateVideoInput } from './../types/graphql-input/UpdateVideoInput';
 import { VideoMutationResponse } from './../types/graphql-response/VideoMutationResponse';
+import { FindConditions, FindManyOptions, In, LessThan, Like } from 'typeorm';
 
 @Resolver(_of => Video)
 class VideoResolver {
+  @Query(_return=>Video, {nullable: true})
+  async video (
+    @Arg('id', _type=>ID) id: string
+  ) : Promise<Video | undefined> {
+    try {
+      return await Video.findOne(id)
+    } catch (error) {
+      console.log(error);
+      return
+    }
+  }
 
+  @Query(_return => PaginatedVideos, {nullable: true})
+  async videos (
+    @Arg('limit', _type=>Int) limit: number,
+    @Arg('cursor', {nullable: true}) cursor?: string,
+    @Arg('userId', {nullable: true}) userId?: string,
+    @Arg('user', _type=>[String], {nullable: true}) user?: string[],
+    @Arg('catagory', _type=>[String], {nullable: true}) catagory?: string[],
+    @Arg('catagoryId', {nullable: true}) catagoryId?: string,
+    @Arg('query', {nullable: true}) query?: string
+  ): Promise<PaginatedVideos | undefined> {
+    try {
+      let totalCount: number = 0
+      const realLimit = cursor ? Math.min(limit, 12) : Math.min(limit, 20)
+      const where: FindConditions<Video> = {}
+      const findOptions: FindManyOptions<Video> = {
+        where,
+        order: {
+          createdAt: 'DESC'
+        }
+      }
+      if (user) {
+        const records = await User.find({where: {fullName: Like(
+          user.reduce<string[]>((prev, curr) => [...prev, `%${curr}%`], [])
+        )}})
+        where.userId = In(records.reduce<string[]>((prev, curr) => [...prev, curr.id], []))
+      }
+      if (userId) {
+        where.userId = userId
+      }
+
+      if (catagory) {
+        const records = await Catagory.find({
+          where: {name: Like(catagory.reduce<string[]>((prev, curr) => [...prev, `%${curr}%`], []))},
+        })
+        const catagoryIds = records.reduce<string[]>((prev, curr)=>[...prev,curr.id], [])
+        const vcatagories = await VideoCatagory.find({where: {catagoryId: In(catagoryIds)}})
+        where.id = In(vcatagories.reduce<string[]>((prev, curr)=>[...prev,curr.videoId], []))
+      }
+
+      if (catagoryId) {
+        const records = await VideoCatagory.find({where: {catagoryId}})
+        where.id = In(records.reduce<string[]>((prev, curr)=> [...prev,curr.videoId], []))
+      }
+
+      if (query) {
+        where.title = Like(`%${query}%`)
+      }
+    
+      totalCount = await Video.count(findOptions)
+      if (totalCount === 0)
+        return
+      
+      findOptions.take = realLimit
+
+      let lastVideo: Video[] = []
+      if (cursor) {
+        where.createdAt = LessThan(cursor)
+        lastVideo = await Video.find({
+          order: {createdAt: 'ASC'}, 
+          take: 1,
+          ...findOptions
+        })
+      }
+
+      const videos = await Video.find(findOptions)
+      return {
+        totalCount: totalCount,
+        cursor: videos[videos.length-1].createdAt,
+        hasMore: cursor
+          ? videos[videos.length-1].createdAt.toString() !== lastVideo[0].createdAt.toString()
+          : videos.length !== totalCount,
+        paginatedVideos: videos
+      }
+    } catch (error) {
+      console.log(error);
+      return
+    }
+  }
+  
   @Mutation(_return=>VideoMutationResponse)
   @UseMiddleware(checkAuth)
   async createVideo (

@@ -3,8 +3,9 @@ import { Express } from 'express'
 import { getHeadersToken } from '../../utils/getHeadersToken'
 import { buildSchema } from 'type-graphql'
 import { resolvers } from '../../resolvers/index'
+import { Connection } from 'typeorm'
 
-export const createApolloServer = async (app: Express) => {
+export const createApolloServer = async (app: Express, connection?: Connection) => {
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
         resolvers,
@@ -13,6 +14,7 @@ export const createApolloServer = async (app: Express) => {
     context: ({req, res}) => ({
       req,
       res,
+      connection,
       token: getHeadersToken(req)
     })
   })
