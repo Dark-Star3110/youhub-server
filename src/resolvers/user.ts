@@ -222,6 +222,14 @@ class UserResolver {
     @Ctx() { req }: Context
   ): Promise<UserMutationResponse> {
     try {
+      const user = await User.findOne(req.user?.id)
+      if (!user) {
+        return {
+          code: 400,
+          success: false,
+          message: 'User not found'
+        }
+      }
       await User.update({
         id: req.user?.id,
       }, {
