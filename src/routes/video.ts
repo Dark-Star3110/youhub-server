@@ -3,7 +3,7 @@ import { checkAuth2 } from './../middleware/checkAuth';
 import { Router } from 'express'
 import { UploadedFile } from 'express-fileupload'
 import { Readable } from 'stream'
-import drive from '../config/google-driver-api/index'
+import drive from '../config/google-api/drive'
 import { FOLDER_VIDEO_ID } from '../constant'
 
 const router = Router()

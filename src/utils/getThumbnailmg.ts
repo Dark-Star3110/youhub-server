@@ -1,4 +1,4 @@
-import drive from "../config/google-driver-api"
+import drive from "../config/google-api/drive"
 
 export const getThumbnail = async (id: string) => {
   const response = await drive.files.get({
