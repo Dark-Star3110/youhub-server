@@ -1,6 +1,6 @@
 import { VideoCatagory } from './../entities/VideoCatagory';
 import { PaginatedVideos } from './../types/graphql-response/PaginatedPosts';
-import { getThumbnail } from './../utils/getThumbnailmg';
+import { checkThumbnailImg } from '../utils/checkThumbnailImg';
 import { Arg, Ctx, FieldResolver, ID, Int, Mutation, Query, Resolver, Root, UseMiddleware } from "type-graphql";
 import { Action, Type } from '../types/Action';
 import { deleteFile } from '../utils/deleteFile';
@@ -343,17 +343,14 @@ class VideoResolver {
     @Root() parent: Video
   ): Promise<string | undefined> {
     if (!parent.thumbnailUrl) {
-      try {
-        const thumbnailUrl = await getThumbnail(parent.id) as string | undefined
-        await Video.update({id: parent.id}, {thumbnailUrl})
-        return thumbnailUrl
-      } catch (error) {
+      const check = checkThumbnailImg(parent.id)
+      if (!check) {
         return
+      } else {
+        return `https://drive.google.com/thumbnail?authuser=0&sz=h200&id=${parent.id}`
       }
-    }
-    return parent.thumbnailUrl.indexOf('https://lh3.googleusercontent.com/') !== -1
-    ? parent.thumbnailUrl
-    : `https://drive.google.com/uc?export=view&id=${parent.thumbnailUrl}`
+    } else 
+      return `https://drive.google.com/uc?export=view&id=${parent.thumbnailUrl}`
   }
 
   @FieldResolver(_type=>User, {nullable: true})

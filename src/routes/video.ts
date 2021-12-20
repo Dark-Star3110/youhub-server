@@ -57,7 +57,15 @@ router.post(
           success: false,
           msg: 'upload video failed',
         })
+        return
       }
+      await drive.permissions.create({
+        fileId: response.data.id,
+        requestBody: {
+          type: 'anyone',
+          role: 'reader'
+        }
+      })
       let imgId: string | null | undefined
       if (fileImg) {
         const readableImg = new Readable()
