@@ -12,7 +12,7 @@ import {
 } from "typeorm";
 import { 
   Field, 
-  ID, 
+  ID,
   ObjectType 
 } from 'type-graphql';
 import { LikeComment } from './LikeComment';
@@ -37,18 +37,18 @@ export class Comment extends BaseEntity {
   @Column()
   public content: string;
 
-  @Column()
+  @Column({nullable: true})
   public parentCommentId: string;
 
   @Field()
   @CreateDateColumn({
-    type: "datetime2",
+    type: "datetimeoffset",
   })
   public readonly createdAt: Date;
 
   @Field()
   @UpdateDateColumn({
-    type: "datetime2",
+    type: "datetimeoffset",
   })
   public readonly updatedAt: Date;
 
@@ -124,6 +124,6 @@ export class Comment extends BaseEntity {
   )
   public readonly usersDisLikedConnection: DisLikeComment[]
 
-  @Field(_type=>[User], {nullable: true})
-  public usersDisLiked: User[]
+  @Field(_type=>Number, {nullable: true})
+  public numUsersDisLiked: number
 }
