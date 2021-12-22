@@ -5,15 +5,15 @@ export enum Action {
   DISACTIVATE = 'disactivate'
 }
 
-export enum Type {
-  LIKE = 'like',
-  DISLIKE = 'dislike'
+export enum VoteType {
+  LIKE = 1,
+  DISLIKE = -1
 }
 
 registerEnumType(Action, {
   name: 'Action'
 })
 
-registerEnumType(Type, {
-  name: 'Type'
+registerEnumType(VoteType, {
+  name: 'VoteType'
 })

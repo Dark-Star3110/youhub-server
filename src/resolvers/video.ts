@@ -1,22 +1,21 @@
-import { VideoCatagory } from './../entities/VideoCatagory';
-import { PaginatedVideos } from './../types/graphql-response/PaginatedPosts';
-import { checkThumbnailImg } from '../utils/checkThumbnailImg';
+import { VoteVideo } from './../entities/VoteVideo';
 import { Arg, Ctx, FieldResolver, ID, Int, Mutation, Query, Resolver, Root, UseMiddleware } from "type-graphql";
-import { Action, Type } from '../types/Action';
+import { FindConditions, FindManyOptions, In, LessThan, Like } from 'typeorm';
+import { Action, VoteType } from '../types/Action';
+import { checkThumbnailImg } from '../utils/checkThumbnailImg';
 import { deleteFile } from '../utils/deleteFile';
 import { Catagory } from './../entities/Catagory';
 import { Comment } from './../entities/Comment';
-import { DisLikeVideo } from './../entities/DislikeVideo';
-import { LikeVideo } from './../entities/LikeVideo';
 import { User } from './../entities/User';
 import { Video } from './../entities/Video';
+import { VideoCatagory } from './../entities/VideoCatagory';
 import { WatchLater } from './../entities/WatchLater';
 import { checkAuth } from './../middleware/checkAuth';
 import { Context } from './../types/Context';
 import { CreateVideoInput } from './../types/graphql-input/CreateVideoInput';
 import { UpdateVideoInput } from './../types/graphql-input/UpdateVideoInput';
+import { PaginatedVideos } from './../types/graphql-response/PaginatedPosts';
 import { VideoMutationResponse } from './../types/graphql-response/VideoMutationResponse';
-import { FindConditions, FindManyOptions, In, LessThan, Like } from 'typeorm';
 
 @Resolver(_of => Video)
 class VideoResolver {
@@ -231,13 +230,14 @@ class VideoResolver {
 
   @Mutation(_return=>VideoMutationResponse)
   @UseMiddleware(checkAuth)
-  async reactVideo (
+  async voteVideo (
     @Arg('videoId', _type=>ID) videoId: string,
-    @Arg('type', _type=>Type) type: Type,
+    @Arg('type', _type=>VoteType) type: VoteType,
     @Arg('action', _type=>Action) action: Action,
     @Ctx() { req }: Context
   ): Promise<VideoMutationResponse> {
     try {
+      
       const video = await Video.findOne(videoId)
       if (!video) {
         return {
@@ -247,35 +247,59 @@ class VideoResolver {
         }
       }
       const userId = req.user?.id as string
-      
-      const record = type === Type.LIKE 
-        ? await LikeVideo.findOne({where: {userId, videoId}})
-        : await DisLikeVideo.findOne({where: {userId, videoId}})
-
-      if (action === Action.ACTIVATE && record) 
-        return {
-          code: 400,
-          success: false,
-          message: `Video already ${type}d`
+      const prevAction = await VoteVideo.findOne({userId, videoId})
+      if (prevAction) {
+        if (prevAction.type === type) {
+          if (action===Action.ACTIVATE) {
+            return {
+              code: 400,
+              success: false,
+              message: `you already ${type===1?'like':'dislike'} this video`
+            }
+          } else {
+            await prevAction.remove()
+            return {
+              code: 200,
+              success: true,
+              message: `remove ${type===1?'like':'dislike'} successfully`
+            }
+          }
+        } else {
+          if (action===Action.ACTIVATE) {
+            prevAction.type = type
+            await prevAction.save()
+            return {
+              code: 200,
+              success: true,
+              message: `${type===1?'like':'dislike'} successfully`
+            }
+          } else {
+            return {
+              code: 400,
+              success: false,
+              message: `dissmision action`
+            }
+          }
         }
-      if (action === Action.DISACTIVATE && !record) 
-        return {
-          code: 400,
-          success: false,
-          message: `Video do not ${type}`
+      } else {
+        if (action === Action.DISACTIVATE)
+          return {
+            code: 400,
+            success: false,
+            message: `you nerver ${type===1?'like':'dislike'} this video`
+          }
+        else {
+          await VoteVideo.create({ userId, videoId, type }).save()
+          return {
+            code: 200,
+            success: true,
+            message: `${type===1?'like':'dislike'} video successfully`
+          }
         }
-      
-      if (action === Action.ACTIVATE ) 
-        type === Type.LIKE 
-          ? await LikeVideo.create({userId, videoId}).save()
-          : await DisLikeVideo.create({userId, videoId}).save()
-      else (record as LikeVideo | DisLikeVideo).remove()
-      return {
-        code: 200,
-        success: true,
-        message: `${type===Type.LIKE?'':'Un'}${type} video successfully`
       }
     } catch (error) {
+      console.log(error);
+      
       return {
         code: 500,
         success: false,
@@ -374,16 +398,11 @@ class VideoResolver {
       where: {
         id: parent.id
       },
-      relations: ['usersLikedConnection', 'usersLikedConnection.user']
+      relations: ['voteVideosConnection', 'voteVideosConnection.user']
     })
 
-    return video?.usersLikedConnection.reduce<User[]>(
-      (prev, curr) => [
-        ...prev,
-        curr.user
-      ],
-      []
-    )
+    const likeVideo = video?.voteVideosConnection.filter(v => v.type === 1)
+    return likeVideo?.map<User>(v => v.user)
   }
 
   @FieldResolver(_type=>Number, {nullable: true})
@@ -394,9 +413,12 @@ class VideoResolver {
       where: {
         id: parent.id
       },
-      relations: ['usersDisLikedConnection']
+      relations: ['voteVideosConnection']
     })
-    return video?.usersDisLikedConnection.length
+    return video?.voteVideosConnection.reduce<number>(
+      (prev, curr) => curr.type === -1 ? prev+1 : prev ,
+      0
+    )
   }
 
   @FieldResolver(_type=>[User], {nullable: true})

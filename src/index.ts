@@ -17,6 +17,7 @@ import connectMongo from "./config/mongo-db/connect";
   const app = express();
 
   const connection = await connectMSSQL()
+  // await test()
   connectMongo()
 
   app.use(cors({

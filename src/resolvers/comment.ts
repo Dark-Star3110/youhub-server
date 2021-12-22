@@ -19,6 +19,8 @@ export class CommentResolver {
     return await Comment.findOne(id)
   }
 
+  // @Query(_retutn=>)
+
   @Mutation(_return=>CommentMutationResponse)
   @UseMiddleware(checkAuth)
   async createComment (

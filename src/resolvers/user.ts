@@ -337,15 +337,10 @@ class UserResolver {
   ): Promise<Video[] | undefined> {
     const user = await User.findOne({
       where: {id: parent.id},
-      relations: ['videosLikedConnection', 'videosLikedConnection.video']
+      relations: ['voteVideosConnection', 'voteVideosConnection.video']
     })
-    return user?.videosLikedConnection.reduce<Video[]>(
-      (prev, curr) => [
-        ...prev,
-        curr.video
-      ],
-      []
-    )
+    const likeVideo = user?.voteVideosConnection.filter(voteVideo => voteVideo.type === 1)
+    return likeVideo?.map<Video>(likeVideo => likeVideo.video)
   }
 
   @FieldResolver(_return => [Video], {nullable: true})
@@ -354,15 +349,10 @@ class UserResolver {
   ): Promise<Video[] | undefined> {
     const user = await User.findOne({
       where: {id: parent.id},
-      relations: ['videosDisLikedConnection', 'videosDisLikedConnection.video']
+      relations: ['voteVideosConnection', 'voteVideosConnection.video']
     })
-    return user?.videosDisLikedConnection.reduce<Video[]>(
-      (prev, curr) => [
-        ...prev,
-        curr.video
-      ],
-      []
-    )
+    const dislikeVideo = user?.voteVideosConnection.filter(voteVideo=>voteVideo.type===-1)
+    return dislikeVideo?.map<Video>(dislikeVideo => dislikeVideo.video)
   }
 
   @FieldResolver(_return => [Video], {nullable: true})

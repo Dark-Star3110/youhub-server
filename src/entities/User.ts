@@ -1,28 +1,20 @@
-import { WatchLater } from './WatchLater';
-import { Comment } from './Comment';
-import { LikeVideo } from './LikeVideo';
-import { Video } from './Video';
+import bcrypt from "bcrypt";
 import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  BeforeInsert,
-  CreateDateColumn,
-  BaseEntity,
-  OneToMany,
-  UpdateDateColumn,
+  Field,
+  ID,
+  ObjectType
+} from 'type-graphql';
+import {
+  BaseEntity, BeforeInsert, Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn
 } from "typeorm";
 import { Role } from "../types/Role";
-import bcrypt from "bcrypt";
-import { Subscribe } from "./Subscribe";
-import { DisLikeVideo } from './DislikeVideo';
-import { LikeComment } from './LikeComment';
+import { Comment } from './Comment';
 import { DisLikeComment } from './DislikeComment';
-import { 
-  Field, 
-  ID, 
-  ObjectType 
-} from 'type-graphql';
+import { LikeComment } from './LikeComment';
+import { Subscribe } from "./Subscribe";
+import { Video } from './Video';
+import { VoteVideo } from './VoteVideo';
+import { WatchLater } from './WatchLater';
 
 @ObjectType()
 @Entity()
@@ -86,13 +78,13 @@ export class User extends BaseEntity {
   public readonly updatedAt: Date;
 
   //begin subscribe relationship
-  @OneToMany(_type=>Subscribe, sub=>sub.chanel)
+  @OneToMany(_to=>Subscribe, sub=>sub.chanel)
   public readonly chanelsConnection: Subscribe[]
 
   @Field(_type=>[User], {nullable: true})
   public chanelsSubscribe: User[]
 
-  @OneToMany(_type=>Subscribe, sub=>sub.subscriber)
+  @OneToMany(_to=>Subscribe, sub=>sub.subscriber)
   public readonly subscribersConnection: Subscribe[]
 
   @Field(_type=>[User], {nullable: true})
@@ -102,7 +94,7 @@ export class User extends BaseEntity {
   // begin own video relationship
   @Field(_type=>[Video], {nullable: true})
   @OneToMany(
-    _type=>Video, 
+    _to=>Video, 
     video=>video.user,
     {
       nullable: true
@@ -111,37 +103,24 @@ export class User extends BaseEntity {
   public videos: Video[]
   // end own video relationship
 
-  // begin like video relationship
+  // begin vote video relationship
   @OneToMany(
-    _type=>LikeVideo, 
-    likeVideo => likeVideo.user,
-    {
-      nullable: true
-    }
+    _to=>VoteVideo,
+    voteVideo => voteVideo.user,
+    {nullable: true}
   )
-  public readonly videosLikedConnection: LikeVideo[]
+  public readonly voteVideosConnection: VoteVideo[]
 
   @Field(_type=>[Video], {nullable: true})
   public videosLiked: Video[]
-  // end like video relationship
-
-  // begin not interested video relationship
-  @OneToMany(
-    _type => DisLikeVideo,
-    dlVideo => dlVideo.user,
-    {
-      nullable: true
-    }
-  )
-  public readonly videosDisLikedConnection: DisLikeVideo[]
 
   @Field(_type=>[Video], {nullable: true})
   public videosDisLiked: Video[]
-  // end not interested video relationship
+  // end vote video relationship
 
   // watch later video relationship
   @OneToMany(
-    _type => WatchLater,
+    _to => WatchLater,
     wlt => wlt.user, {
       nullable: true
     }
@@ -154,14 +133,14 @@ export class User extends BaseEntity {
   // own comment relationship
   @Field(_type=>[Comment], {nullable: true})
   @OneToMany(
-    _type=>Comment,
+    _to=>Comment,
     cmt => cmt.user
   )
   public readonly comments: Comment[]
 
   // like comment relationship
   @OneToMany(
-    _type=>LikeComment, 
+    _to=>LikeComment, 
     likeCmt => likeCmt.user,
     {
       nullable: true
@@ -174,7 +153,7 @@ export class User extends BaseEntity {
 
   //dislike comment relationship
   @OneToMany(
-    _type=>DisLikeComment, 
+    _to=>DisLikeComment, 
     dislikeCmt => dislikeCmt.user,
     {
       nullable: true
