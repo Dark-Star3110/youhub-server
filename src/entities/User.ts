@@ -9,10 +9,9 @@ import {
 } from "typeorm";
 import { Role } from "../types/Role";
 import { Comment } from './Comment';
-import { DisLikeComment } from './DislikeComment';
-import { LikeComment } from './LikeComment';
 import { Subscribe } from "./Subscribe";
 import { Video } from './Video';
+import { VoteComment } from './VoteComment';
 import { VoteVideo } from './VoteVideo';
 import { WatchLater } from './WatchLater';
 
@@ -140,26 +139,16 @@ export class User extends BaseEntity {
 
   // like comment relationship
   @OneToMany(
-    _to=>LikeComment, 
-    likeCmt => likeCmt.user,
+    _to => VoteComment, 
+    voteCmt => voteCmt.user,
     {
       nullable: true
     }
   )
-  public readonly commentsLikedConnection: LikeComment[]
+  public readonly voteCommentConnection: VoteComment[]
 
   @Field(_type=>[Comment], {nullable: true})
   public commentsLiked: Comment[]
-
-  //dislike comment relationship
-  @OneToMany(
-    _to=>DisLikeComment, 
-    dislikeCmt => dislikeCmt.user,
-    {
-      nullable: true
-    }
-  )
-  public readonly commentsDisLikedConnection: LikeComment[]
 
   @Field(_type=>[Comment], {nullable: true})
   public commentsDisLiked: Comment[] 

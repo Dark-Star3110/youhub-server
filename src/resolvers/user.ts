@@ -389,15 +389,10 @@ class UserResolver {
   ): Promise<Comment[] | undefined> {
     const user = await User.findOne({
       where: {id: parent.id},
-      relations: ['commentsLikedConnection', 'commentsLikedConnection.comment']
+      relations: ['voteCommentConnection', 'voteCommentConnection.comment']
     })
-    return user?.commentsLikedConnection.reduce<Comment[]>(
-      (prev, curr) => [
-        ...prev,
-        curr.comment
-      ],
-      []
-    )
+    const likeCmt = user?.voteCommentConnection.filter(v => v.type === 1)
+    return likeCmt?.map<Comment>(v => v.comment)
   }
 
   @FieldResolver(_return => [Comment], {nullable: true})
@@ -408,13 +403,8 @@ class UserResolver {
       where: {id: parent.id},
       relations: ['commentsDisLikedConnection', 'commentsDisLikedConnection.comment']
     })
-    return user?.commentsDisLikedConnection.reduce<Comment[]>(
-      (prev, curr) => [
-        ...prev,
-        curr.comment
-      ],
-      []
-    )
+    const dislikeCmt = user?.voteCommentConnection.filter(v => v.type === -1)
+    return dislikeCmt?.map<Comment>(v => v.comment)
   }
 }
 

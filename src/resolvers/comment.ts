@@ -175,18 +175,20 @@ export class CommentResolver {
   async usersLiked (
     @Root() parent: Comment
   ): Promise<User[] | undefined> {
-    const comment = await Comment.findOne(parent.id, {relations: ['usersLikedConnection', 'usersLikedConnection.user']})  
-    return comment?.usersLikedConnection.reduce<User[]>(
-      (prev, curr) => [...prev, curr.user],
-      []
-    )
+    const comment = await Comment.findOne(parent.id, {relations: ['voteCommentConnention', 'voteCommentConnention.user']})  
+    const likeCmt = comment?.voteCommentConnention.filter(likecmt=>likecmt.type===1)
+    return likeCmt?.map<User>(v => v.user)
   }
   
   @FieldResolver(_type=>Number, {nullable: true})
   async numUsersDisLiked (
     @Root() parent: Comment
   ): Promise<number | undefined> {
-    const comment = await Comment.findOne(parent.id, {relations: ['usersDisLikedConnection']})  
-    return comment?.usersDisLikedConnection.length
+    const comment = await Comment.findOne(parent.id, {relations: ['voteCommentConnention']})  
+
+    return comment?.voteCommentConnention.reduce<number>(
+      (prev, curr) => curr.type === -1 ? prev+1 : prev, 
+      0
+    )
   }
 }

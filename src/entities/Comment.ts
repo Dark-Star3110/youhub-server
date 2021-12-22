@@ -1,24 +1,16 @@
 import {
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
-  DeleteDateColumn,
-  Entity,
-  PrimaryGeneratedColumn,
-  BaseEntity,
-  OneToMany,
-  ManyToOne,
-  JoinColumn,
-} from "typeorm";
-import { 
-  Field, 
+  Field,
   ID,
-  ObjectType 
+  ObjectType
 } from 'type-graphql';
-import { LikeComment } from './LikeComment';
-import { DisLikeComment } from './DislikeComment';
-import { Video } from './Video';
+import {
+  BaseEntity, Column,
+  CreateDateColumn, DeleteDateColumn,
+  Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn
+} from "typeorm";
 import { User } from './User';
+import { Video } from './Video';
+import { VoteComment } from './VoteComment';
 
 @ObjectType()
 @Entity()
@@ -107,22 +99,15 @@ export class Comment extends BaseEntity {
   @JoinColumn({name: 'videoId'})
   public video: Video
 
-  // users like this comment relationship
+  // users vote this comment relationship
   @OneToMany(
-    _type=>LikeComment,
-    likeComment => likeComment.comment
+    _to => VoteComment,
+    voteCmt => voteCmt.comment
   )
-  public readonly usersLikedConnection: LikeComment[]
+  public readonly voteCommentConnention: VoteComment[]
 
   @Field(_type=>[User], {nullable: true})
   public usersLiked: User[]
-
-  // users dislike this comment relationship
-  @OneToMany(
-    _type=>DisLikeComment,
-    dislikeComment => dislikeComment.comment
-  )
-  public readonly usersDisLikedConnection: DisLikeComment[]
 
   @Field(_type=>Number, {nullable: true})
   public numUsersDisLiked: number
