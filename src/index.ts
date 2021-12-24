@@ -1,5 +1,4 @@
 require('dotenv').config()
-import "reflect-metadata";
 import 'colors'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'

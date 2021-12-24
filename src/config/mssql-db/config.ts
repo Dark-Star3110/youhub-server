@@ -8,7 +8,7 @@ const config: ConnectionOptions = {
   password: process.env.MSSQL_PASSWORD,
   database: process.env.MSSQL_DBNAME,
   synchronize: true,
-  logging: false,
+  logging: true,
   entities,
   options: {
     encrypt: false,
