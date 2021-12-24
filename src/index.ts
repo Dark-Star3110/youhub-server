@@ -13,7 +13,7 @@ import { PORT } from "./constant";
 import connectMongo from "./config/mongo-db/connect";
 
 const app = express();
-// test
+
 connectMSSQL();
 connectMongo();
 

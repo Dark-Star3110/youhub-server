@@ -44,24 +44,24 @@ export class Video extends BaseEntity {
 
   @Field({ nullable: true })
   @Column({ nullable: true })
-  public thumbnailUrl: string;
+  public thumbnailUrl?: string;
 
   @Field()
   @Column()
-  public size!: number;
+  public size!: string;
 
   @Column()
   public userId!: string;
 
   @Field()
   @CreateDateColumn({
-    type: "datetime2",
+    type: "datetimeoffset",
   })
   public readonly createdAt: Date;
 
   @Field()
   @UpdateDateColumn({
-    type: "datetime2",
+    type: "datetimeoffset",
   })
   public readonly updatedAt: Date;
 
@@ -87,8 +87,8 @@ export class Video extends BaseEntity {
   @OneToMany(() => DisLikeVideo, (dlVideo) => dlVideo.video)
   public readonly usersDisLikedConnection: DisLikeVideo[];
 
-  @Field((_type) => [User], { nullable: true })
-  public usersDisLiked: User[];
+  @Field((_type) => Number, { nullable: true })
+  public numUsersDisLiked: number;
 
   // watch later
   @OneToMany((_type) => WatchLater, (wlt) => wlt.video, {

@@ -5,6 +5,6 @@ export class FileResponse {
   @Field()
   id: string
 
-  @Field({nullable: true})
+  @Field(_type=>String, {nullable: true})
   size?: string | null
 }

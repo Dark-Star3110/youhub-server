@@ -15,7 +15,6 @@ export const loginSocial = async (input: SocialLogin): Promise<User|null> => {
         })
         const payload = ticket.getPayload()
         if (!payload) return null
-  
         const exsistingUser = await User.findOne({socialId: payload.sub})
         if (!exsistingUser) {
           const newUser = await User.create({

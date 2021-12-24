@@ -12,7 +12,7 @@ export class UpdateUserInfoInput {
   channelDecscription?: string
 
   @Field({nullable: true})
-  image_url?: string
+  imageId?: string
 
   @Field({nullable: true})
   dateOfBirth?: string

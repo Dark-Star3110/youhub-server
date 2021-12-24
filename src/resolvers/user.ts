@@ -125,7 +125,6 @@ class UserResolver {
         userId: user.id
       })
       
-      console.log('on');
       res.cookie(COOKIE_NAME, refreshToken, COOKIE_OPTIONS)
       await (new StoreToken({userId: user.id, refreshToken})).save()
       
@@ -147,8 +146,6 @@ class UserResolver {
 
     if (refreshToken) {
       try {
-        console.log('qua day');
-        
         const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET as string) as Payload
         const users = await StoreToken.find({userId: payload.userId})
         const index = users.findIndex(user => user.validToken(refreshToken))
@@ -246,6 +243,33 @@ class UserResolver {
         }]
       }
     }
+  }
+
+  @FieldResolver(_return=>String)
+  @UseMiddleware(checkAuth)
+  email (
+    @Root() parent: User,
+    @Ctx() { req }: Context
+  ): string {
+    return parent.id === req.user?.id || parent.role==='ADMIN' ? parent.email : ""
+  }
+
+  @FieldResolver(_return=>String, {nullable: true})
+  @UseMiddleware(checkAuth)
+  socialId (
+    @Root() parent: User,
+    @Ctx() { req }: Context
+  ): String | undefined{
+    return parent.id === req.user?.id || parent.role==='ADMIN' ? parent.socialId : ""
+  }
+
+  @FieldResolver(_return=>String)
+  image_url (
+    @Root() parent: User,
+  ) {
+    if (parent.image_url?.indexOf('http')!==-1)
+      return parent.image_url 
+    else return `https://drive.google.com/uc?export=view&id=${parent.image_url}`
   }
 
   @FieldResolver(_return=>[User], {nullable: true})

@@ -29,7 +29,7 @@ export class User extends BaseEntity {
   public readonly id: string;
 
   @Field({ nullable: true })
-  @Column({ unique: true, nullable: true })
+  @Column({ nullable: true })
   public username?: string;
 
   @Column({ nullable: true })
