@@ -62,7 +62,7 @@ class UserResolver {
       return {
         code: 200,
         success: true,
-        message: "sign up successfully, redirect to login page",
+        message: "sign up successfully",
       };
     } catch (error) {
       return {

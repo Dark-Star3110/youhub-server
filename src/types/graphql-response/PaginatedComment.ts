@@ -1,17 +1,13 @@
-import { Comment } from './../../entities/Comment';
+import { Comment } from "./../../entities/Comment";
 import { Field, ObjectType } from "type-graphql";
+import { PaginatedResponse } from "./PaginatedResponse";
 
-@ObjectType()
-export class PaginatedComments {
-  @Field()
-  totalCount: number
+@ObjectType({ implements: PaginatedResponse })
+export class PaginatedComments implements PaginatedResponse {
+  totalCount: number;
+  cursor: Date;
+  hasMore: boolean;
 
-  @Field()
-  cursor: Date
-
-  @Field()
-  hasMore: boolean
-
-  @Field(_type=>[Comment])
-  paginatedComments: Comment[]
+  @Field((_type) => [Comment])
+  paginatedComments: Comment[];
 }

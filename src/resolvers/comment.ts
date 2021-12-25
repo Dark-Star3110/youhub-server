@@ -76,7 +76,6 @@ export class CommentResolver {
       }
       const comments = await Comment.find(findOptions);
       if (comments.length <= 0) return;
-      console.log(lastComment);
 
       return {
         totalCount,
