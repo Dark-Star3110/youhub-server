@@ -53,9 +53,11 @@ class VideoResolver {
     @Arg("query", { nullable: true }) query?: string
   ): Promise<PaginatedVideos | undefined> {
     try {
+      console.log("so lan");
+
       let totalCount: number = 0;
       const realLimit = cursor ? Math.min(limit, 12) : Math.min(limit, 20);
-      const where: FindConditions<Video> = {};
+      const where: FindConditions<Video>[] = [];
       const findOptions: FindManyOptions<Video> = {
         where,
         order: {
@@ -70,12 +72,14 @@ class VideoResolver {
             ),
           },
         });
-        where.userId = In(
-          records.reduce<string[]>((prev, curr) => [...prev, curr.id], [])
-        );
+        where.push({
+          userId: In(
+            records.reduce<string[]>((prev, curr) => [...prev, curr.id], [])
+          ),
+        });
       }
       if (userId) {
-        where.userId = userId;
+        where.push({ userId });
       }
 
       if (catagory) {
@@ -96,23 +100,30 @@ class VideoResolver {
         const vcatagories = await VideoCatagory.find({
           where: { catagoryId: In(catagoryIds) },
         });
-        where.id = In(
-          vcatagories.reduce<string[]>(
-            (prev, curr) => [...prev, curr.videoId],
-            []
-          )
-        );
+        where.push({
+          id: In(
+            vcatagories.reduce<string[]>(
+              (prev, curr) => [...prev, curr.videoId],
+              []
+            )
+          ),
+        });
       }
 
       if (catagoryId) {
         const records = await VideoCatagory.find({ where: { catagoryId } });
-        where.id = In(
-          records.reduce<string[]>((prev, curr) => [...prev, curr.videoId], [])
-        );
+        where.push({
+          id: In(
+            records.reduce<string[]>(
+              (prev, curr) => [...prev, curr.videoId],
+              []
+            )
+          ),
+        });
       }
 
       if (query) {
-        where.title = Like(`%${query}%`);
+        where.push({ title: Like(`%${query}%`) });
       }
 
       totalCount = await Video.count(findOptions);
@@ -120,12 +131,18 @@ class VideoResolver {
 
       let lastVideo: Video[] = [];
       if (cursor) {
-        where.createdAt = LessThan(cursor);
         lastVideo = await Video.find({
           ...findOptions,
           order: { createdAt: "ASC" },
           take: 1,
         });
+
+        if (where.length <= 0) where.push({ createdAt: LessThan(cursor) });
+
+        findOptions.where = where.map((cd) => ({
+          ...cd,
+          createdAt: LessThan(cursor),
+        }));
       }
       findOptions.take = realLimit;
 
@@ -425,13 +442,7 @@ class VideoResolver {
 
   @FieldResolver((_type) => User, { nullable: true })
   async user(@Root() parent: Video): Promise<User | undefined> {
-    const video = await Video.findOne({
-      where: {
-        id: parent.id,
-      },
-      relations: ["user"],
-    });
-    return video?.user;
+    return await User.findOne(parent.userId);
   }
 
   @FieldResolver((_type) => Number, { nullable: true })
