@@ -224,17 +224,19 @@ export class CommentResolver {
   }
 
   @FieldResolver((_type) => Comment, { nullable: true })
-  async parentComment(@Root() parent: Comment): Promise<Comment | undefined> {
-    const comment = await Comment.findOne(parent.id, {
-      relations: ["parentComment"],
-    });
-    return comment?.parentComment;
+  async parentComment(
+    @Root() parent: Comment,
+    @Ctx() { dataLoaders }: Context
+  ): Promise<Comment | undefined> {
+    return await dataLoaders.parentCmtLoader.load(parent.id);
   }
 
   @FieldResolver((_type) => User, { nullable: true })
-  async user(@Root() parent: Comment): Promise<User | undefined> {
-    const comment = await Comment.findOne(parent.id, { relations: ["user"] });
-    return comment?.user;
+  async user(
+    @Root() parent: Comment,
+    @Ctx() { dataLoaders }: Context
+  ): Promise<User | undefined> {
+    return await dataLoaders.userLoader.load(parent.userId);
   }
 
   @FieldResolver((_type) => Number, { nullable: true })

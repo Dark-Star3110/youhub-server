@@ -255,7 +255,7 @@ class VideoResolver {
           success: false,
           message: "video not found",
         };
-      if (video.userId !== req.user?.id || req.user.role !== "ADMIN")
+      if (req.user?.role !== "ADMIN" && video.userId !== req.user?.id)
         return {
           code: 401,
           success: false,
@@ -274,6 +274,8 @@ class VideoResolver {
         message: "delete successfully",
       };
     } catch (error) {
+      console.log(error);
+
       return {
         code: 500,
         success: false,
@@ -441,8 +443,11 @@ class VideoResolver {
   }
 
   @FieldResolver((_type) => User, { nullable: true })
-  async user(@Root() parent: Video): Promise<User | undefined> {
-    return await User.findOne(parent.userId);
+  async user(
+    @Root() parent: Video,
+    @Ctx() { dataLoaders }: Context
+  ): Promise<User | undefined> {
+    return await dataLoaders.userLoader.load(parent.userId);
   }
 
   @FieldResolver((_type) => Number, { nullable: true })
@@ -460,12 +465,11 @@ class VideoResolver {
   }
 
   @FieldResolver((_type) => [Catagory], { nullable: true })
-  async catagories(@Root() parent: Video): Promise<Catagory[] | undefined> {
-    const videoCatagories = await VideoCatagory.find({
-      where: { videoId: parent.id },
-      relations: ["catagory"],
-    });
-    return videoCatagories.map((vc) => vc.catagory);
+  async catagories(
+    @Root() parent: Video,
+    @Ctx() { dataLoaders }: Context
+  ): Promise<Catagory[] | undefined> {
+    return await dataLoaders.catagoryLoader.load(parent.id);
   }
 }
 

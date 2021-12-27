@@ -13,7 +13,6 @@ import StoreToken from "../models/storeToken";
 import { UpdateUserInfoInput } from "../types/graphql-input/UpdateUserInfoInput";
 import { getRefreshToken, getToken } from "../utils/generateToken";
 import { COOKIE_NAME, COOKIE_OPTIONS, profileGenerateImg } from "./../constant";
-import { Subscribe } from "./../entities/Subscribe";
 import { User } from "./../entities/User";
 import { checkAuth } from "./../middleware/checkAuth";
 import { Context } from "./../types/Context";
@@ -304,21 +303,21 @@ class UserResolver {
   }
 
   @FieldResolver((_return) => [User], { nullable: true })
-  async chanelsSubscribe(@Root() parent: User): Promise<User[] | undefined> {
-    const subscribe = await Subscribe.find({
-      where: { subscriberId: parent.id },
-      relations: ["channel"],
-    });
-    return subscribe.map<User>((sub) => sub.chanel);
+  async chanelsSubscribe(
+    @Root() parent: User,
+    @Ctx() { dataLoaders, req }: Context
+  ): Promise<User[] | undefined> {
+    if (req.user?.id !== parent.id) return;
+    return await dataLoaders.channelLoader.load(parent.id);
   }
 
   @FieldResolver((_return) => [User], { nullable: true })
-  async subscribers(@Root() parent: User): Promise<User[] | undefined> {
-    const subscribe = await Subscribe.find({
-      where: { channelId: parent.id },
-      relations: ["subscriber"],
-    });
-    return subscribe.map<User>((sub) => sub.subscriber);
+  async subscribers(
+    @Root() parent: User,
+    @Ctx() { dataLoaders, req }: Context
+  ): Promise<User[] | undefined> {
+    if (req.user?.id !== parent.id) return;
+    return await dataLoaders.subscriberLoader.load(parent.id);
   }
 }
 
