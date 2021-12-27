@@ -51,6 +51,10 @@ export class User extends BaseEntity {
   @Column({ default: " " })
   public lastName: string;
 
+  @Column({ nullable: true })
+  @Field({ nullable: true })
+  public fullName: string;
+
   @Field({ nullable: true })
   @Column("text", { nullable: true })
   channelDecscription: string;
@@ -160,6 +164,7 @@ export class User extends BaseEntity {
       const hash = bcrypt.hashSync(this.password, 10);
       this.password = hash;
     }
+    this.fullName = `${this.lastName} ${this.firstName}`;
   }
 
   validatePassword(pass: string) {

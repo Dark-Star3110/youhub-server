@@ -1,4 +1,4 @@
-import drive from "../config/google-driver-api"
+import drive from "../config/google-api/drive"
 
 export const deleteFile = async (id: string) => {
   await drive.files.delete({

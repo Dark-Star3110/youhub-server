@@ -4,7 +4,7 @@ import { Video } from '../entities/Video';
 import { Arg, Ctx, FieldResolver, Mutation, Query, Resolver, Root, UseMiddleware } from "type-graphql";
 import StoreToken from '../models/storeToken';
 import { getRefreshToken, getToken } from '../utils/generateToken';
-import { COOKIE_NAME, COOKIE_OPTIONS } from './../constant';
+import { COOKIE_NAME, COOKIE_OPTIONS, profileGenerateImg } from './../constant';
 import { User } from './../entities/User';
 import { checkAuth } from './../middleware/checkAuth';
 import { Context } from './../types/Context';
@@ -47,7 +47,9 @@ class UserResolver {
           }]
         }
 
-      const newUser = User.create({...signupInput})
+      const image_url = profileGenerateImg[Math.floor(Math.random()*10)]
+
+      const newUser = User.create({...signupInput, image_url})
       await newUser.save()
   
       return {
@@ -222,6 +224,14 @@ class UserResolver {
     @Ctx() { req }: Context
   ): Promise<UserMutationResponse> {
     try {
+      const user = await User.findOne(req.user?.id)
+      if (!user) {
+        return {
+          code: 400,
+          success: false,
+          message: 'User not found'
+        }
+      }
       await User.update({
         id: req.user?.id,
       }, {
