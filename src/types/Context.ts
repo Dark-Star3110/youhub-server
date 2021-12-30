@@ -8,6 +8,6 @@ export type Context = {
   req: Request & { user?: User };
   res: Response;
   token?: string;
-  connection?: Connection;
+  connection: Connection;
   dataLoaders: ReturnType<typeof buildDataLoaders>;
 };

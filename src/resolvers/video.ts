@@ -163,6 +163,111 @@ class VideoResolver {
     }
   }
 
+  @Query((_return) => PaginatedVideos, { nullable: true })
+  async videosWatchLater(
+    @Arg("userId") userId: string,
+    @Arg("limit", (_type) => Int) limit: number,
+    @Ctx() { req }: Context,
+    @Arg("cursor", { nullable: true }) cursor?: string
+  ): Promise<PaginatedVideos | undefined> {
+    try {
+      if (userId !== req.user?.id) return;
+      const realLimit = Math.min(limit, 12);
+      const totalCount = await WatchLater.count({
+        where: { userId },
+      });
+
+      let lastWatchVideo: WatchLater[] = [];
+      const findOptions: FindManyOptions<WatchLater> = {
+        order: {
+          createdAt: "DESC",
+        },
+        where: { userId },
+        take: realLimit,
+      };
+      if (cursor) {
+        lastWatchVideo = await VoteVideo.find({
+          where: { userId },
+          order: { createdAt: "ASC" },
+          take: 1,
+        });
+        findOptions.where = {
+          userId,
+          cursor: LessThan(cursor),
+        };
+      }
+      findOptions.relations = ["video"];
+      const watchVideos = await WatchLater.find(findOptions);
+      if (watchVideos.length <= 0) return;
+
+      return {
+        totalCount,
+        cursor: watchVideos[watchVideos.length - 1].createdAt,
+        hasMore: cursor
+          ? watchVideos[watchVideos.length - 1].createdAt.toString() !==
+            lastWatchVideo[0].createdAt.toString()
+          : totalCount !== watchVideos.length,
+        paginatedVideos: watchVideos.map((wv) => wv.video),
+      };
+    } catch (error) {
+      console.log(error);
+      return;
+    }
+  }
+
+  @Query((_return) => PaginatedVideos, { nullable: true })
+  async videosVoted(
+    @Arg("userId") userId: string,
+    @Arg("limit", (_type) => Int) limit: number,
+    @Arg('type') type: VoteType,
+    @Ctx() { req }: Context,
+    @Arg("cursor", { nullable: true }) cursor?: string
+  ): Promise<PaginatedVideos | undefined> {
+    try {
+      if (userId !== req.user?.id) return;
+      const realLimit = Math.min(limit, 12);
+      const totalCount = await VoteVideo.count({
+        where: { userId, type},
+      });
+
+      let lastVideoVoted: VoteVideo[] = [];
+      const findOptions: FindManyOptions<VoteVideo> = {
+        order: {
+          updatedAt: "DESC",
+        },
+        where: { userId, type},
+        take: realLimit,
+      };
+      if (cursor) {
+        lastVideoVoted = await VoteVideo.find({
+          where: { userId, type},
+          order: { updatedAt: "ASC" },
+          take: 1,
+        });
+        findOptions.where = {
+          userId,
+          cursor: LessThan(cursor),
+        };
+      }
+      findOptions.relations = ["video"];
+      const videosVoted = await VoteVideo.find(findOptions);
+      if (videosVoted.length <= 0) return;
+
+      return {
+        totalCount,
+        cursor: videosVoted[videosVoted.length - 1].updatedAt,
+        hasMore: cursor
+          ? videosVoted[videosVoted.length - 1].updatedAt.toString() !==
+          lastVideoVoted[0].updatedAt.toString()
+          : totalCount !== videosVoted.length,
+        paginatedVideos: videosVoted.map((videoVoted) => videoVoted.video),
+      };
+    } catch (error) {
+      console.log(error);
+      return;
+    }
+  }
+
   @Mutation((_return) => VideoMutationResponse)
   @UseMiddleware(checkAuth)
   async createVideo(
