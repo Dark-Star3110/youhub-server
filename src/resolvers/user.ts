@@ -1,3 +1,4 @@
+import { getUserInfo } from "./../middleware/getUserInfo";
 import jwt from "jsonwebtoken";
 import {
   Arg,
@@ -277,11 +278,13 @@ class UserResolver {
   }
 
   @FieldResolver((_return) => String)
+  @UseMiddleware(getUserInfo)
   role(@Root() parent: User, @Ctx() { req }: Context): string {
     return parent.id === req.user?.id ? parent.role : "";
   }
 
   @FieldResolver((_return) => String)
+  @UseMiddleware(getUserInfo)
   email(@Root() parent: User, @Ctx() { req }: Context): string {
     return parent.id === req.user?.id || parent.role === "ADMIN"
       ? parent.email
@@ -289,6 +292,7 @@ class UserResolver {
   }
 
   @FieldResolver((_return) => String, { nullable: true })
+  @UseMiddleware(getUserInfo)
   socialId(@Root() parent: User, @Ctx() { req }: Context): String | undefined {
     return parent.id === req.user?.id || parent.role === "ADMIN"
       ? parent.socialId
@@ -303,6 +307,7 @@ class UserResolver {
   }
 
   @FieldResolver((_return) => [User], { nullable: true })
+  @UseMiddleware(getUserInfo)
   async chanelsSubscribe(
     @Root() parent: User,
     @Ctx() { dataLoaders, req }: Context
@@ -312,6 +317,7 @@ class UserResolver {
   }
 
   @FieldResolver((_return) => [User], { nullable: true })
+  @UseMiddleware(getUserInfo)
   async subscribers(
     @Root() parent: User,
     @Ctx() { dataLoaders, req }: Context

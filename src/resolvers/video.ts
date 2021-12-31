@@ -26,6 +26,7 @@ import { CreateVideoInput } from "./../types/graphql-input/CreateVideoInput";
 import { UpdateVideoInput } from "./../types/graphql-input/UpdateVideoInput";
 import { PaginatedVideos } from "./../types/graphql-response/PaginatedPosts";
 import { VideoMutationResponse } from "./../types/graphql-response/VideoMutationResponse";
+import { getUserInfo } from "../middleware/getUserInfo";
 
 @Resolver((_of) => Video)
 class VideoResolver {
@@ -164,14 +165,14 @@ class VideoResolver {
   }
 
   @Query((_return) => PaginatedVideos, { nullable: true })
+  @UseMiddleware(checkAuth)
   async videosWatchLater(
-    @Arg("userId") userId: string,
     @Arg("limit", (_type) => Int) limit: number,
     @Ctx() { req }: Context,
     @Arg("cursor", { nullable: true }) cursor?: string
   ): Promise<PaginatedVideos | undefined> {
     try {
-      if (userId !== req.user?.id) return;
+      const userId = req.user?.id as string;
       const realLimit = Math.min(limit, 12);
       const totalCount = await WatchLater.count({
         where: { userId },
@@ -216,18 +217,18 @@ class VideoResolver {
   }
 
   @Query((_return) => PaginatedVideos, { nullable: true })
+  @UseMiddleware(checkAuth)
   async videosVoted(
-    @Arg("userId") userId: string,
     @Arg("limit", (_type) => Int) limit: number,
-    @Arg('type') type: VoteType,
+    @Arg("type") type: VoteType,
     @Ctx() { req }: Context,
     @Arg("cursor", { nullable: true }) cursor?: string
   ): Promise<PaginatedVideos | undefined> {
     try {
-      if (userId !== req.user?.id) return;
+      const userId = req.user?.id as string;
       const realLimit = Math.min(limit, 12);
       const totalCount = await VoteVideo.count({
-        where: { userId, type},
+        where: { userId, type },
       });
 
       let lastVideoVoted: VoteVideo[] = [];
@@ -235,12 +236,12 @@ class VideoResolver {
         order: {
           updatedAt: "DESC",
         },
-        where: { userId, type},
+        where: { userId, type },
         take: realLimit,
       };
       if (cursor) {
         lastVideoVoted = await VoteVideo.find({
-          where: { userId, type},
+          where: { userId, type },
           order: { updatedAt: "ASC" },
           take: 1,
         });
@@ -258,7 +259,7 @@ class VideoResolver {
         cursor: videosVoted[videosVoted.length - 1].updatedAt,
         hasMore: cursor
           ? videosVoted[videosVoted.length - 1].updatedAt.toString() !==
-          lastVideoVoted[0].updatedAt.toString()
+            lastVideoVoted[0].updatedAt.toString()
           : totalCount !== videosVoted.length,
         paginatedVideos: videosVoted.map((videoVoted) => videoVoted.video),
       };
@@ -575,6 +576,19 @@ class VideoResolver {
     @Ctx() { dataLoaders }: Context
   ): Promise<Catagory[] | undefined> {
     return await dataLoaders.catagoryLoader.load(parent.id);
+  }
+
+  @FieldResolver((_type) => Int)
+  @UseMiddleware(getUserInfo)
+  async voteStatus(
+    @Root() parent: Video,
+    @Ctx() { dataLoaders, req }: Context
+  ) {
+    const status = await dataLoaders.voteVideoStatusLoader.load({
+      userId: req.user?.id,
+      videoId: parent.id,
+    });
+    return status ? status : 0;
   }
 }
 

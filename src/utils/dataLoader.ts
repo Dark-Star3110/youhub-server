@@ -1,9 +1,16 @@
+import { VoteVideo } from "./../entities/VoteVideo";
 import DataLoader from "dataloader";
 import { User } from "../entities/User";
 import { Catagory } from "./../entities/Catagory";
 import { Comment } from "./../entities/Comment";
 import { Subscribe } from "./../entities/Subscribe";
 import { VideoCatagory } from "./../entities/VideoCatagory";
+import { VoteType } from "../types/Action";
+
+interface VoteCondition {
+  userId?: string;
+  videoId: string;
+}
 
 const batchGetUsers = async (userIds: string[]) => {
   const users = await User.findByIds(userIds);
@@ -61,6 +68,17 @@ const batchGetParentComment = async (cmtIds: string[]) => {
   );
 };
 
+const batchGetVoteVideoStatus = async (conditions: VoteCondition[]) => {
+  const voteVideos = await VoteVideo.findByIds(conditions);
+  return conditions.map(
+    (condition) =>
+      voteVideos.find(
+        (vv) =>
+          vv.videoId === condition.videoId && vv.userId === condition.userId
+      )?.type
+  );
+};
+
 export const buildDataLoaders = () => ({
   userLoader: new DataLoader<string, User | undefined>((userIds) =>
     batchGetUsers(userIds as string[])
@@ -76,5 +94,8 @@ export const buildDataLoaders = () => ({
   ),
   parentCmtLoader: new DataLoader<string, Comment | undefined>((cmtIds) =>
     batchGetParentComment(cmtIds as string[])
+  ),
+  voteVideoStatusLoader: new DataLoader<VoteCondition, VoteType | undefined>(
+    (conditions) => batchGetVoteVideoStatus(conditions as VoteCondition[])
   ),
 });
