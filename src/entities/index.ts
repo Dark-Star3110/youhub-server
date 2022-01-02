@@ -1,15 +1,13 @@
-import { DisLikeComment } from "./DislikeComment";
-import { LikeComment } from "./LikeComment";
-import { VideoCatagory } from "./VideoCatagory";
-import { WatchLater } from "./WatchLater";
-import { DisLikeVideo } from "./DislikeVideo";
-import { Video } from "./Video";
-import { User } from "./User";
-import { Comment } from "./Comment";
-import { Catagory } from "./Catagory";
-import { Subscribe } from "./Subscribe";
-import { LikeVideo } from "./LikeVideo";
 import { EntitySchema } from "typeorm";
+import { Catagory } from "./Catagory";
+import { Comment } from "./Comment";
+import { Subscribe } from "./Subscribe";
+import { User } from "./User";
+import { Video } from "./Video";
+import { VideoCatagory } from "./VideoCatagory";
+import { VoteComment } from "./VoteComment";
+import { VoteVideo } from "./VoteVideo";
+import { WatchLater } from "./WatchLater";
 
 const entities: (string | Function | EntitySchema<any>)[] = [
   User,
@@ -17,11 +15,9 @@ const entities: (string | Function | EntitySchema<any>)[] = [
   Comment,
   Catagory,
   Subscribe,
-  LikeVideo,
-  DisLikeVideo,
+  VoteVideo,
   WatchLater,
   VideoCatagory,
-  LikeComment,
-  DisLikeComment,
+  VoteComment,
 ];
 export default entities;

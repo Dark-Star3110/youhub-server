@@ -1,29 +1,24 @@
+import { Field, ID, ObjectType } from "type-graphql";
 import {
+  BaseEntity,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
   DeleteDateColumn,
   Entity,
-  PrimaryGeneratedColumn,
-  BaseEntity,
-  OneToMany,
-  ManyToOne,
   JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from "typeorm";
-import { 
-  Field, 
-  ID, 
-  ObjectType 
-} from 'type-graphql';
-import { LikeComment } from './LikeComment';
-import { DisLikeComment } from './DislikeComment';
-import { Video } from './Video';
-import { User } from './User';
+import { User } from "./User";
+import { Video } from "./Video";
+import { VoteComment } from "./VoteComment";
 
 @ObjectType()
 @Entity()
 export class Comment extends BaseEntity {
-  @Field(_type=>ID)
+  @Field((_type) => ID)
   @PrimaryGeneratedColumn("uuid")
   public readonly id: string;
 
@@ -37,18 +32,18 @@ export class Comment extends BaseEntity {
   @Column()
   public content: string;
 
-  @Column()
+  @Column({ nullable: true })
   public parentCommentId: string;
 
   @Field()
   @CreateDateColumn({
-    type: "datetime2",
+    type: "datetimeoffset",
   })
-  public readonly createdAt: Date;
+  public createdAt: Date;
 
   @Field()
   @UpdateDateColumn({
-    type: "datetime2",
+    type: "datetimeoffset",
   })
   public readonly updatedAt: Date;
 
@@ -59,71 +54,43 @@ export class Comment extends BaseEntity {
   public readonly deletedAt: Date;
 
   // child comment relationship
-  @Field(_type=>[Comment], {nullable: true})
-  @OneToMany(
-    _type=>Comment,
-    cmt => cmt.parentComment,
-    {
-      nullable: true
-    }
-  )
-  public childComments: Comment[]
+  @OneToMany((_type) => Comment, (cmt) => cmt.parentComment, {
+    nullable: true,
+  })
+  public childComments: Comment[];
 
-  @Field(_type=>Comment, {nullable: true})
-  @ManyToOne(
-    _type => Comment,
-    cmt => cmt.childComments,
-    {
-      cascade: true,
-      nullable: true
-    }
-  )
-  @JoinColumn({name: 'parentCommentId'})
-  public parentComment: Comment
+  @Field((_type) => Comment, { nullable: true })
+  @ManyToOne((_type) => Comment, (cmt) => cmt.childComments, {
+    cascade: true,
+    nullable: true,
+  })
+  @JoinColumn({ name: "parentCommentId" })
+  public parentComment: Comment;
 
   // uset own comments relationship
-  @Field(_type=>User)
-  @ManyToOne(
-    _type=>User,
-    user=>user.comments,
-    {
-      cascade: true,
-      nullable: false
-    }
-  )
-  @JoinColumn({name: 'userId'})
-  public user: User
+  @Field((_type) => User)
+  @ManyToOne((_type) => User, (user) => user.comments, {
+    cascade: true,
+    nullable: false,
+  })
+  @JoinColumn({ name: "userId" })
+  public user: User;
 
   // comment video comments relationship
-  @Field(_type=>Video)
-  @ManyToOne(
-    _type=>Video,
-    video => video.comments,
-    {
-      cascade: true,
-      nullable: false
-    }
-  )
-  @JoinColumn({name: 'videoId'})
-  public video: Video
+  @ManyToOne((_type) => Video, (video) => video.comments, {
+    cascade: true,
+    nullable: false,
+  })
+  @JoinColumn({ name: "videoId" })
+  public video: Video;
 
-  // users like this comment relationship
-  @OneToMany(
-    _type=>LikeComment,
-    likeComment => likeComment.comment
-  )
-  public readonly usersLikedConnection: LikeComment[]
+  // users vote this comment relationship
+  @OneToMany((_to) => VoteComment, (voteCmt) => voteCmt.comment)
+  public readonly voteCommentConnention: VoteComment[];
 
-  @Field(_type=>[User], {nullable: true})
-  public usersLiked: User[]
+  @Field((_type) => Number, { nullable: true })
+  public numUsersLiked: number;
 
-  // users dislike this comment relationship
-  @OneToMany(
-    _type=>DisLikeComment,
-    dislikeComment => dislikeComment.comment
-  )
-  public readonly usersDisLikedConnection: DisLikeComment[]
-
-  @Field(_type=>[User], {nullable: true})
-  public usersDisLiked: User[]
+  @Field((_type) => Number, { nullable: true })
+  public numUsersDisLiked: number;
 }

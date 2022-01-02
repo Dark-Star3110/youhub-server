@@ -1,21 +1,20 @@
+import { Field, ID, ObjectType } from "type-graphql";
 import {
-  Entity,
+  BaseEntity,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
-  BaseEntity,
-  ManyToOne,
+  Entity,
   JoinColumn,
+  ManyToOne,
   OneToMany,
+  UpdateDateColumn,
 } from "typeorm";
-import { Field, ID, ObjectType } from "type-graphql";
 import { Catagory } from "./Catagory";
-import { WatchLater } from "./WatchLater";
 import { Comment } from "./Comment";
-import { LikeVideo } from "./LikeVideo";
 import { User } from "./User";
-import { DisLikeVideo } from "./DislikeVideo";
 import { VideoCatagory } from "./VideoCatagory";
+import { VoteVideo } from "./VoteVideo";
+import { WatchLater } from "./WatchLater";
 
 @ObjectType()
 @Entity()
@@ -75,17 +74,16 @@ export class Video extends BaseEntity {
   public readonly user: User;
   // end user own relationship
 
-  // begin user like video relationship
-  @OneToMany((_type) => LikeVideo, (likeVideo) => likeVideo.video)
-  public readonly usersLikedConnection: LikeVideo[];
+  // begin user vote video relationship
 
-  @Field((_type) => [User], { nullable: true })
-  public usersLiked: User[];
-  // end user like video relationship
+  @OneToMany((_to) => VoteVideo, (voteVideo) => voteVideo.video, {
+    nullable: true,
+  })
+  public readonly voteVideosConnection: VoteVideo[];
 
-  // user dislike video relationship
-  @OneToMany(() => DisLikeVideo, (dlVideo) => dlVideo.video)
-  public readonly usersDisLikedConnection: DisLikeVideo[];
+  @Field((_type) => Number, { nullable: true })
+  public numUsersLiked: number;
+  // end user vote video relationship
 
   @Field((_type) => Number, { nullable: true })
   public numUsersDisLiked: number;
@@ -96,11 +94,7 @@ export class Video extends BaseEntity {
   })
   public readonly usersWatchLaterConnection: WatchLater[];
 
-  @Field((_type) => [User], { nullable: true })
-  public usersWatchLater: User[];
-
   // video contain comments relationship
-  @Field((_type) => [Comment], { nullable: true })
   @OneToMany((_type) => Comment, (cmt) => cmt.video)
   public comments: Comment[];
 

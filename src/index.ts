@@ -1,5 +1,6 @@
-require("dotenv").config();
 import "reflect-metadata";
+import { configSocket } from "./config/socket/configSocket";
+require("dotenv").config();
 import "colors";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -16,6 +17,7 @@ import connectMongo from "./config/mongo-db/connect";
   const app = express();
 
   const connection = await connectMSSQL();
+  // await test()
   connectMongo();
 
   app.use(
@@ -38,12 +40,13 @@ import connectMongo from "./config/mongo-db/connect";
 
   createApolloServer(app, connection)
     .then((path) => {
-      app.listen(PORT, () => {
+      const server = app.listen(PORT, () => {
         console.log(
-          `listening on port http://localhost:${PORT}\nGgraphql start at http://localhost:${PORT}${path}`
+          `🚀Listening on port http://localhost:${PORT}\n😊Ggraphql start at http://localhost:${PORT}${path}`
             .yellow
         );
       });
+      configSocket(server);
     })
     .catch((err) => console.log(`have some error:\n${err}`.red));
 })();
