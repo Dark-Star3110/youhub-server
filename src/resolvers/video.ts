@@ -45,87 +45,17 @@ class VideoResolver {
   @Query((_return) => PaginatedVideos, { nullable: true })
   async videos(
     @Arg("limit", (_type) => Int) limit: number,
-    @Arg("cursor", { nullable: true }) cursor?: string,
-    @Arg("userId", { nullable: true }) userId?: string,
-    @Arg("user", (_type) => [String!], { nullable: true }) user?: string[],
-    @Arg("catagory", (_type) => [String!], { nullable: true })
-    catagory?: string[],
-    @Arg("catagoryId", { nullable: true }) catagoryId?: string,
-    @Arg("query", { nullable: true }) query?: string
+    @Arg("cursor", { nullable: true }) cursor?: string
   ): Promise<PaginatedVideos | undefined> {
     try {
-      console.log("so lan");
-
       let totalCount: number = 0;
       const realLimit = cursor ? Math.min(limit, 12) : Math.min(limit, 20);
-      const where: FindConditions<Video>[] = [];
       const findOptions: FindManyOptions<Video> = {
-        where,
         order: {
           createdAt: "DESC",
         },
+        take: realLimit,
       };
-      if (user) {
-        const records = await User.find({
-          where: {
-            fullName: Like(
-              user.reduce<string[]>((prev, curr) => [...prev, `%${curr}%`], [])
-            ),
-          },
-        });
-        where.push({
-          userId: In(
-            records.reduce<string[]>((prev, curr) => [...prev, curr.id], [])
-          ),
-        });
-      }
-      if (userId) {
-        where.push({ userId });
-      }
-
-      if (catagory) {
-        const records = await Catagory.find({
-          where: {
-            name: Like(
-              catagory.reduce<string[]>(
-                (prev, curr) => [...prev, `%${curr}%`],
-                []
-              )
-            ),
-          },
-        });
-        const catagoryIds = records.reduce<string[]>(
-          (prev, curr) => [...prev, curr.id],
-          []
-        );
-        const vcatagories = await VideoCatagory.find({
-          where: { catagoryId: In(catagoryIds) },
-        });
-        where.push({
-          id: In(
-            vcatagories.reduce<string[]>(
-              (prev, curr) => [...prev, curr.videoId],
-              []
-            )
-          ),
-        });
-      }
-
-      if (catagoryId) {
-        const records = await VideoCatagory.find({ where: { catagoryId } });
-        where.push({
-          id: In(
-            records.reduce<string[]>(
-              (prev, curr) => [...prev, curr.videoId],
-              []
-            )
-          ),
-        });
-      }
-
-      if (query) {
-        where.push({ title: Like(`%${query}%`) });
-      }
 
       totalCount = await Video.count(findOptions);
       if (totalCount === 0) return;
@@ -133,19 +63,13 @@ class VideoResolver {
       let lastVideo: Video[] = [];
       if (cursor) {
         lastVideo = await Video.find({
-          ...findOptions,
           order: { createdAt: "ASC" },
           take: 1,
         });
-
-        if (where.length <= 0) where.push({ createdAt: LessThan(cursor) });
-
-        findOptions.where = where.map((cd) => ({
-          ...cd,
+        findOptions.where = {
           createdAt: LessThan(cursor),
-        }));
+        };
       }
-      findOptions.take = realLimit;
 
       const videos = await Video.find(findOptions);
       if (videos.length <= 0) return;
@@ -162,6 +86,105 @@ class VideoResolver {
       console.log(error);
       return;
     }
+  }
+
+  @Query((_return) => PaginatedVideos, { nullable: true })
+  async find(
+    @Arg("limit", (_type) => Int) limit: number,
+    @Arg("query") query: string,
+    @Arg("cursor", { nullable: true }) cursor?: string
+  ): Promise<PaginatedVideos | undefined> {
+    const realLimit = Math.min(limit, 20);
+    let lastVideo: Video[] = [];
+    const where: FindConditions<Video>[] = [];
+    const findOptions: FindManyOptions<Video> = {
+      where,
+      order: { createdAt: "DESC" },
+    };
+    const users = await User.find({
+      select: ["id"],
+      where: { fullName: Like(`%${query}%`) },
+    });
+    where.push({ userId: In(users.map((user) => user.id)) });
+    const catagories = await Catagory.find({
+      select: ["id"],
+      where: { name: Like(`%${query}%`) },
+    });
+    const videosCata = await VideoCatagory.find({
+      select: ["videoId"],
+      where: { catagoryId: In(catagories.map((cata) => cata.id)) },
+    });
+    where.push({ id: In(videosCata.map((v) => v.videoId)) });
+
+    const totalCount = await Video.count(findOptions);
+    if (totalCount === 0) return;
+    findOptions.take = realLimit;
+    if (cursor) {
+      lastVideo = await Video.find({
+        ...findOptions,
+        order: { createdAt: "ASC" },
+        take: 1,
+      });
+      where.map((condition) => ({
+        ...condition,
+        createdAt: LessThan(cursor),
+      }));
+    }
+    const videos = await Video.find(findOptions);
+    if (videos.length <= 0) return;
+
+    return {
+      totalCount,
+      cursor: videos[videos.length - 1].createdAt,
+      hasMore: cursor
+        ? videos[videos.length - 1].createdAt.toString() !==
+          lastVideo[0].createdAt.toString()
+        : totalCount !== videos.length,
+      paginatedVideos: videos,
+    };
+  }
+
+  @Query((_return) => PaginatedVideos, { nullable: true })
+  async videoUser(
+    @Arg("limit", (_type) => Int) limit: number,
+    @Arg("userId", { nullable: true }) userId: string,
+    @Arg("cursor", { nullable: true }) cursor?: string
+  ): Promise<PaginatedVideos | undefined> {
+    const realLimit = Math.min(limit, 20);
+    let lastVideo: Video[] = [];
+    const totalCount = await Video.count({
+      where: { userId },
+    });
+    if (totalCount === 0) return;
+    const findOptions: FindManyOptions<Video> = {
+      order: {
+        createdAt: "DESC",
+      },
+      where: { userId },
+      take: realLimit,
+    };
+    if (cursor) {
+      lastVideo = await Video.find({
+        where: { userId },
+        order: { createdAt: "ASC" },
+        take: 1,
+      });
+      findOptions.where = {
+        userId,
+        createdAt: LessThan(cursor),
+      };
+    }
+    const videos = await Video.find(findOptions);
+    if (videos.length <= 0) return;
+    return {
+      totalCount,
+      cursor: videos[videos.length - 1].createdAt,
+      hasMore: cursor
+        ? videos[videos.length - 1].createdAt.toString() !==
+          lastVideo[0].createdAt.toString()
+        : totalCount !== videos.length,
+      paginatedVideos: videos,
+    };
   }
 
   @Query((_return) => PaginatedVideos, { nullable: true })

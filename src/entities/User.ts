@@ -61,6 +61,9 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   public image_url?: string;
 
+  @Column({ nullable: true })
+  public banner_id?: string;
+
   @Field({ nullable: true })
   @Column({ nullable: true })
   public banner_id?: string;
