@@ -4,7 +4,7 @@ require("dotenv").config();
 import "colors";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-// import { test } from './test/db';
+// import { test } from "./test/db";
 import express from "express";
 import fileUpload from "express-fileupload";
 import connectMSSQL from "./config/mssql-db/connect";
@@ -17,7 +17,7 @@ import connectMongo from "./config/mongo-db/connect";
   const app = express();
 
   const connection = await connectMSSQL();
-  // await test()
+  // await test();
   connectMongo();
 
   app.use(

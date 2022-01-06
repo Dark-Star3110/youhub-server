@@ -1,42 +1,38 @@
-import { Video } from './Video';
-import { User } from './User';
-import { 
-  BaseEntity, 
-  Column, 
-  Entity, 
-  JoinColumn, 
-  ManyToOne 
+import { Video } from "./Video";
+import { User } from "./User";
+import {
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
 } from "typeorm";
 
 @Entity()
 export class WatchLater extends BaseEntity {
   @Column({
-    primary: true
+    primary: true,
   })
-  public userId: string
+  public userId: string;
 
   @Column({
-    primary: true
+    primary: true,
   })
-  public videoId: string
+  public videoId: string;
 
-  @ManyToOne(
-    _type=>User,
-    user => user.videosWatchLaterConnection,
-    {
-      cascade: true
-    }
-  )
-  @JoinColumn({name: 'userId'})
-  public readonly user: User
+  @ManyToOne((_type) => User, (user) => user.videosWatchLaterConnection, {
+    cascade: true,
+  })
+  @JoinColumn({ name: "userId" })
+  public readonly user: User;
 
-  @ManyToOne(
-    _type => Video,
-    video => video.usersWatchLaterConnection, 
-    {
-      cascade: true
-    }
-  )
-  @JoinColumn({name: 'videoId'})
-  public readonly video: Video
+  @ManyToOne((_type) => Video, (video) => video.usersWatchLaterConnection, {
+    cascade: true,
+  })
+  @JoinColumn({ name: "videoId" })
+  public readonly video: Video;
+
+  @CreateDateColumn()
+  public createdAt: Date;
 }
