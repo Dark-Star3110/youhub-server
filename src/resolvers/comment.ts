@@ -1,3 +1,4 @@
+import { Action, VoteType } from "./../types/Action";
 import { VoteComment } from "./../entities/VoteComment";
 import { PaginatedComments } from "./../types/graphql-response/PaginatedComment";
 import { UpdateCommentInput } from "./../types/graphql-input/UpdateCommentInput";
@@ -10,6 +11,7 @@ import {
   Arg,
   Ctx,
   FieldResolver,
+  ID,
   Mutation,
   Query,
   Resolver,
@@ -48,7 +50,6 @@ export class CommentResolver {
         order: {
           createdAt: "DESC",
         },
-        take: realLimit,
       };
       if (getCmtInput.parentCmtId) {
         where.parentCommentId = getCmtInput.parentCmtId;
@@ -69,11 +70,15 @@ export class CommentResolver {
         lastComment = await Comment.find({
           order: { createdAt: "ASC" },
           where: getCmtInput.parentCmtId
-            ? { parentCommentId: getCmtInput.parentCmtId }
-            : {},
+            ? {
+                parentCommentId: getCmtInput.parentCmtId,
+                videoId: getCmtInput.videoId,
+              }
+            : { parentCommentId: IsNull(), videoId: getCmtInput.videoId },
           take: 1,
         });
       }
+      findOptions.take = realLimit;
       const comments = await Comment.find(findOptions);
       if (comments.length <= 0) return;
 
@@ -88,7 +93,6 @@ export class CommentResolver {
       };
     } catch (error) {
       console.log(error);
-
       return;
     }
   }
@@ -209,6 +213,94 @@ export class CommentResolver {
         comment,
       };
     } catch (error) {
+      return {
+        code: 500,
+        success: false,
+        message: "server error",
+        errors: [
+          {
+            type: "server",
+            error,
+          },
+        ],
+      };
+    }
+  }
+
+  @Mutation((_return) => CommentMutationResponse)
+  @UseMiddleware(checkAuth)
+  async voteComment(
+    @Arg("commentId", (_type) => ID) commentId: string,
+    @Arg("type", (_type) => VoteType) type: VoteType,
+    @Arg("action") action: Action,
+    @Ctx() { req }: Context
+  ): Promise<CommentMutationResponse> {
+    try {
+      const comment = await Comment.findOne(commentId);
+      if (!comment) {
+        return {
+          code: 400,
+          success: false,
+          message: "Video not found",
+        };
+      }
+      const userId = req.user?.id as string;
+      const prevAction = await VoteComment.findOne({ userId, commentId });
+      if (prevAction) {
+        if (prevAction.type === type) {
+          if (action === Action.ACTIVATE) {
+            return {
+              code: 400,
+              success: false,
+              message: `you already ${
+                type === 1 ? "like" : "dislike"
+              } this comment`,
+            };
+          } else {
+            await prevAction.remove();
+            return {
+              code: 200,
+              success: true,
+              message: `remove ${type === 1 ? "like" : "dislike"} successfully`,
+            };
+          }
+        } else {
+          if (action === Action.ACTIVATE) {
+            prevAction.type = type;
+            await prevAction.save();
+            return {
+              code: 200,
+              success: true,
+              message: `${type === 1 ? "like" : "dislike"} successfully`,
+            };
+          } else {
+            return {
+              code: 400,
+              success: false,
+              message: `dissmision action`,
+            };
+          }
+        }
+      } else {
+        if (action === Action.DISACTIVATE)
+          return {
+            code: 400,
+            success: false,
+            message: `you nerver ${
+              type === 1 ? "like" : "dislike"
+            } this comment`,
+          };
+        else {
+          await VoteComment.create({ userId, commentId, type }).save();
+          return {
+            code: 200,
+            success: true,
+            message: `${type === 1 ? "like" : "dislike"} comment successfully`,
+          };
+        }
+      }
+    } catch (error) {
+      console.log(error);
       return {
         code: 500,
         success: false,

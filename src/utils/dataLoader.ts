@@ -1,3 +1,4 @@
+import { SubscribeStatus } from "./../types/graphql-response/SubscribeStatus";
 import { VoteVideo } from "./../entities/VoteVideo";
 import DataLoader from "dataloader";
 import { User } from "../entities/User";
@@ -7,9 +8,14 @@ import { Subscribe } from "./../entities/Subscribe";
 import { VideoCatagory } from "./../entities/VideoCatagory";
 import { VoteType } from "../types/Action";
 
-interface VoteCondition {
+interface VoteVideoCondition {
   userId?: string;
   videoId: string;
+}
+
+interface SubscribeCondition {
+  chanelId: string;
+  subscriberId?: string;
 }
 
 const batchGetUsers = async (userIds: string[]) => {
@@ -68,7 +74,7 @@ const batchGetParentComment = async (cmtIds: string[]) => {
   );
 };
 
-const batchGetVoteVideoStatus = async (conditions: VoteCondition[]) => {
+const batchGetVoteVideoStatus = async (conditions: VoteVideoCondition[]) => {
   const voteVideos = await VoteVideo.findByIds(conditions);
   return conditions.map(
     (condition) =>
@@ -77,6 +83,23 @@ const batchGetVoteVideoStatus = async (conditions: VoteCondition[]) => {
           vv.videoId === condition.videoId && vv.userId === condition.userId
       )?.type
   );
+};
+
+const batchGetSubscribeStatus = async (
+  subscribeConditions: SubscribeCondition[]
+): Promise<SubscribeStatus[]> => {
+  const subscribes = await Subscribe.findByIds(subscribeConditions);
+  return subscribeConditions.map((sc) => {
+    const subscribe = subscribes.find(
+      (subscribe) =>
+        subscribe.chanelId === sc.chanelId &&
+        subscribe.subscriberId === sc.subscriberId
+    );
+    return {
+      status: !!subscribe,
+      notification: subscribe ? subscribe.isNotification : false,
+    };
+  });
 };
 
 export const buildDataLoaders = () => ({
@@ -95,7 +118,14 @@ export const buildDataLoaders = () => ({
   parentCmtLoader: new DataLoader<string, Comment | undefined>((cmtIds) =>
     batchGetParentComment(cmtIds as string[])
   ),
-  voteVideoStatusLoader: new DataLoader<VoteCondition, VoteType | undefined>(
-    (conditions) => batchGetVoteVideoStatus(conditions as VoteCondition[])
+  voteVideoStatusLoader: new DataLoader<
+    VoteVideoCondition,
+    VoteType | undefined
+  >((conditions) =>
+    batchGetVoteVideoStatus(conditions as VoteVideoCondition[])
+  ),
+  subscribeStatusLoader: new DataLoader<SubscribeCondition, SubscribeStatus>(
+    (subscribeConditions) =>
+      batchGetSubscribeStatus(subscribeConditions as SubscribeCondition[])
   ),
 });
