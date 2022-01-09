@@ -65,10 +65,6 @@ export class User extends BaseEntity {
   public banner_id?: string;
 
   @Field({ nullable: true })
-  @Column({ nullable: true })
-  public banner_id?: string;
-
-  @Field({ nullable: true })
   @Column("datetime", { nullable: true })
   public dateOfBirth: Date;
 

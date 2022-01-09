@@ -10,13 +10,16 @@ import fileUpload from "express-fileupload";
 import connectMSSQL from "./config/mssql-db/connect";
 import { createApolloServer } from "./config/graphql-server/index";
 import routeConfig from "./routes";
-import { PORT } from "./constant";
+import { PORT, __prop__ } from "./constant";
 import connectMongo from "./config/mongo-db/connect";
 
 (async () => {
   const app = express();
 
   const connection = await connectMSSQL();
+  if (__prop__) {
+    await connection?.runMigrations();
+  }
   // await test();
   connectMongo();
 

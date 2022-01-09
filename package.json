@@ -29,7 +29,8 @@
     "mssql": "^7.3.0",
     "nodemailer": "^6.7.2",
     "socket.io": "^4.4.0",
-    "type-graphql": "^1.1.1"
+    "type-graphql": "^1.1.1",
+    "typeorm": "^0.2.41"
   },
   "devDependencies": {
     "@typegoose/typegoose": "^9.3.1",
@@ -45,7 +46,6 @@
     "colors": "^1.4.0",
     "nodemon": "^2.0.15",
     "ts-node-dev": "^1.1.8",
-    "typeorm": "^0.2.41",
     "typescript": "^4.5.2"
   }
 }
