@@ -1,14 +1,15 @@
-import mongoose from 'mongoose'
+import mongoose from "mongoose";
+import { __prop__ } from "../../constant";
 
 const connectMongo = async () => {
   try {
     await mongoose.connect(
-      `mongodb+srv://${process.env.MONGO_DB_USERNAME}:${process.env.MONGO_DB_PASSWORD}@${process.env.MONGO_DB_HOST}/${process.env.MONGO_DB_NAME}?retryWrites=true&w=majority`
-    )
-    console.log(`connected to mongo db`.green)
+      __prop__ ? process.env.MONGO_PROP_URL : process.env.MONGO_DEV_URL
+    );
+    console.log(`connected to mongo db`.green);
   } catch (error) {
-    console.log(`fail to connect mongo db`.red);
+    console.log(`fail to connect mongo db`.red, error);
   }
-}
+};
 
-export default connectMongo
+export default connectMongo;

@@ -1,36 +1,35 @@
-import { Video } from "./../entities/Video";
-import { Action } from "./../types/Action";
-import { Subscribe } from "./../entities/Subscribe";
-import { SubscribeStatus } from "./../types/graphql-response/SubscribeStatus";
-import { getUserInfo } from "./../middleware/getUserInfo";
-import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import {
   Arg,
   Ctx,
   FieldResolver,
+  ID,
+  Int,
   Mutation,
   Query,
   Resolver,
   Root,
-  ID,
   UseMiddleware,
-  Int,
 } from "type-graphql";
-import StoreToken from "../models/storeToken";
+import { sendMail } from "../config/google-api/mail";
 import ForgotPasswordToken from "../models/forgotPasswordToken";
+import StoreToken from "../models/storeToken";
 import { UpdateUserInfoInput } from "../types/graphql-input/UpdateUserInfoInput";
 import { getRefreshToken, getToken } from "../utils/generateToken";
 import { COOKIE_NAME, COOKIE_OPTIONS, profileGenerateImg } from "./../constant";
+import { Subscribe } from "./../entities/Subscribe";
 import { User } from "./../entities/User";
+import { Video } from "./../entities/Video";
 import { checkAuth } from "./../middleware/checkAuth";
+import { Action } from "./../types/Action";
 import { Context } from "./../types/Context";
 import { LoginInput, SocialLogin } from "./../types/graphql-input/LoginInput";
 import { SignupInput } from "./../types/graphql-input/SignupInput";
+import { SubscribeStatus } from "./../types/graphql-response/SubscribeStatus";
 import { UserMutationResponse } from "./../types/graphql-response/UserMutationResponse";
 import { Payload } from "./../types/Payload";
 import { loginSocial } from "./../utils/loginSocial";
-import { sendMail } from "../config/google-api/mail";
 
 @Resolver((_of) => User)
 class UserResolver {
@@ -42,10 +41,17 @@ class UserResolver {
 
   @Query((_return) => User, { nullable: true })
   async user(
-    @Arg("userId", (_type) => ID) userId: string
+    @Arg("userId", (_type) => ID) userId: string,
+    @Ctx() { redis }: Context
   ): Promise<User | undefined> {
     try {
-      return await User.findOne(userId);
+      const data = await redis.get(`user_${userId}`);
+
+      if (data) {
+        return JSON.parse(data);
+      } else {
+        return User.findOne(userId);
+      }
     } catch (error) {
       return;
     }
@@ -101,7 +107,7 @@ class UserResolver {
 
   @Mutation((_return) => UserMutationResponse)
   async login(
-    @Ctx() { res }: Context,
+    @Ctx() { res, redis }: Context,
     @Arg("socialLogin", { nullable: true }) socialLogin?: SocialLogin,
     @Arg("loginInput", { nullable: true }) loginInput?: LoginInput
   ): Promise<UserMutationResponse> {
@@ -132,6 +138,7 @@ class UserResolver {
             ],
           };
       } catch (error) {
+        console.log(error);
         return {
           code: 500,
           success: false,
@@ -159,15 +166,38 @@ class UserResolver {
         userId: user.id,
       });
 
-      res.cookie(COOKIE_NAME, refreshToken, COOKIE_OPTIONS);
-      await new StoreToken({ userId: user.id, refreshToken }).save();
+      try {
+        if ((await redis.exists(`user_${user.id}`)) === 0) {
+          await redis.set(
+            `user_${user.id}`,
+            JSON.stringify(user),
+            "ex",
+            24 * 60 * 1000
+          );
+        }
+        res.cookie(COOKIE_NAME, refreshToken, COOKIE_OPTIONS);
+        await new StoreToken({ userId: user.id, refreshToken }).save();
 
-      return {
-        code: 200,
-        success: true,
-        message: "login successfully",
-        token,
-      };
+        return {
+          code: 200,
+          success: true,
+          message: "login successfully",
+          token,
+        };
+      } catch (error) {
+        console.log(error);
+        return {
+          code: 500,
+          success: false,
+          message: "server error",
+          errors: [
+            {
+              type: "Server",
+              error: `${error}`,
+            },
+          ],
+        };
+      }
     }
   }
 
@@ -258,7 +288,7 @@ class UserResolver {
   @UseMiddleware(checkAuth)
   async updateInfo(
     @Arg("updateInput") updateInput: UpdateUserInfoInput,
-    @Ctx() { req }: Context
+    @Ctx() { req, redis }: Context
   ): Promise<UserMutationResponse> {
     try {
       const user = await User.findOne(req.user?.id);
@@ -277,6 +307,9 @@ class UserResolver {
           ...updateInput,
         }
       );
+      if ((await redis.exists(`user_${user.id}`)) === 0) {
+        await redis.del(`user_${user.id}`);
+      }
       return {
         code: 200,
         success: false,
@@ -437,35 +470,31 @@ Hello ${user.username}
   }
 
   @FieldResolver((_return) => SubscribeStatus)
-  @UseMiddleware(getUserInfo)
   async subscribeStatus(
     @Ctx() { req, dataLoaders }: Context,
     @Root() parent: User
   ) {
     return await dataLoaders.subscribeStatusLoader.load({
       chanelId: parent.id,
-      subscriberId: req.user?.id,
+      subscriberId: req.userId,
     });
   }
 
   @FieldResolver((_return) => String)
-  @UseMiddleware(getUserInfo)
   role(@Root() parent: User, @Ctx() { req }: Context): string {
-    return parent.id === req.user?.id ? parent.role : "";
+    return parent.id === req.userId ? parent.role : "";
   }
 
   @FieldResolver((_return) => String)
-  @UseMiddleware(getUserInfo)
   email(@Root() parent: User, @Ctx() { req }: Context): string {
-    return parent.id === req.user?.id || parent.role === "ADMIN"
+    return parent.id === req.userId || parent.role === "ADMIN"
       ? parent.email
       : "";
   }
 
   @FieldResolver((_return) => String, { nullable: true })
-  @UseMiddleware(getUserInfo)
   socialId(@Root() parent: User, @Ctx() { req }: Context): String | undefined {
-    return parent.id === req.user?.id || parent.role === "ADMIN"
+    return parent.id === req.userId || parent.role === "ADMIN"
       ? parent.socialId
       : "";
   }
@@ -485,29 +514,26 @@ Hello ${user.username}
   }
 
   @FieldResolver((_return) => String, { nullable: true })
-  @UseMiddleware(getUserInfo)
   dateOfBirth(@Root() parent: User, @Ctx() { req }: Context) {
-    if (parent.id !== req.user?.id) return;
+    if (parent.id !== req.userId) return;
     return parent.dateOfBirth;
   }
 
   @FieldResolver((_return) => [User], { nullable: true })
-  @UseMiddleware(getUserInfo)
   async chanelsSubscribe(
     @Root() parent: User,
     @Ctx() { dataLoaders, req }: Context
   ): Promise<User[] | undefined> {
-    if (req.user?.id !== parent.id) return;
+    if (req.userId !== parent.id) return;
     return await dataLoaders.channelLoader.load(parent.id);
   }
 
   @FieldResolver((_return) => [User], { nullable: true })
-  @UseMiddleware(getUserInfo)
   async subscribers(
     @Root() parent: User,
     @Ctx() { dataLoaders, req }: Context
   ): Promise<User[] | undefined> {
-    if (req.user?.id !== parent.id) return;
+    if (req.userId !== parent.id) return;
     return await dataLoaders.subscriberLoader.load(parent.id);
   }
 

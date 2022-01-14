@@ -26,7 +26,7 @@ const batchGetUsers = async (userIds: string[]) => {
 const batchGetChanels = async (subscriberIds: string[]) => {
   const subscribe = await Subscribe.find<Subscribe>({
     where: subscriberIds.map((id) => ({ subscriberId: id })),
-    relations: ["channel"],
+    relations: ["chanel"],
   });
   return subscriberIds.map((sbId) =>
     subscribe.reduce<User[]>(

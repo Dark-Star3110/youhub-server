@@ -72,13 +72,13 @@ export class User extends BaseEntity {
   @Column({ enum: ["ADMIN", "USER", "GUEST"], default: "USER" })
   public role: Role;
 
-  @Field()
+  @Field((_type) => String)
   @CreateDateColumn({
     type: "datetime2",
   })
   public readonly createdAt: Date;
 
-  @Field()
+  @Field((_type) => String)
   @UpdateDateColumn({ type: "datetime2" })
   public readonly updatedAt: Date;
 

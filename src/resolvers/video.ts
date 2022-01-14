@@ -26,16 +26,29 @@ import { CreateVideoInput } from "./../types/graphql-input/CreateVideoInput";
 import { UpdateVideoInput } from "./../types/graphql-input/UpdateVideoInput";
 import { PaginatedVideos } from "./../types/graphql-response/PaginatedPosts";
 import { VideoMutationResponse } from "./../types/graphql-response/VideoMutationResponse";
-import { getUserInfo } from "../middleware/getUserInfo";
 
 @Resolver((_of) => Video)
 class VideoResolver {
   @Query((_return) => Video, { nullable: true })
   async video(
-    @Arg("id", (_type) => ID) id: string
+    @Arg("id", (_type) => ID) id: string,
+    @Ctx() { redis }: Context
   ): Promise<Video | undefined> {
     try {
-      return await Video.findOne(id);
+      const data = await redis.get(`video_${id}`);
+      if (data) {
+        return JSON.parse(data);
+      } else {
+        const video = await Video.findOne(id);
+        if (video)
+          await redis.set(
+            `video_${id}`,
+            JSON.stringify(video),
+            "ex",
+            24 * 60 * 1000
+          );
+        return video;
+      }
     } catch (error) {
       console.log(error);
       return;
@@ -332,7 +345,7 @@ class VideoResolver {
   async updateVideo(
     @Arg("videoId", (_type) => ID) videoId: string,
     @Arg("updateVideoInput") updateVideoInput: UpdateVideoInput,
-    @Ctx() { req }: Context
+    @Ctx() { req, redis }: Context
   ): Promise<VideoMutationResponse> {
     try {
       const video = await Video.findOne(videoId);
@@ -349,6 +362,7 @@ class VideoResolver {
           message: "Unauthorized",
         };
       await Video.update({ id: videoId }, { ...updateVideoInput });
+      await redis.del(`video_${videoId}`);
       return {
         code: 200,
         success: true,
@@ -374,7 +388,7 @@ class VideoResolver {
   @UseMiddleware(checkAuth)
   async deleteVideo(
     @Arg("videoId", (_type) => ID) videoId: string,
-    @Ctx() { req }: Context
+    @Ctx() { req, redis }: Context
   ): Promise<VideoMutationResponse> {
     try {
       const video = await Video.findOne(videoId);
@@ -384,12 +398,14 @@ class VideoResolver {
           success: false,
           message: "video not found",
         };
-      if (req.user?.role !== "ADMIN" && video.userId !== req.user?.id)
+
+      if (req.user?.role !== "ADMIN" && video.userId !== req.user?.id) {
         return {
           code: 401,
           success: false,
           message: "unauthorized",
         };
+      }
       const thumbnailFileId =
         video.thumbnailUrl?.indexOf("https://lh3.googleusercontent.com/") !== -1
           ? video.thumbnailUrl
@@ -397,6 +413,8 @@ class VideoResolver {
       await video.remove();
       await deleteFile(videoId);
       if (thumbnailFileId) await deleteFile(thumbnailFileId);
+
+      await redis.del(`video_${videoId}`);
       return {
         code: 200,
         success: true,
@@ -425,10 +443,23 @@ class VideoResolver {
     @Arg("videoId", (_type) => ID) videoId: string,
     @Arg("type", (_type) => VoteType) type: VoteType,
     @Arg("action", (_type) => Action) action: Action,
-    @Ctx() { req }: Context
+    @Ctx() { req, redis }: Context
   ): Promise<VideoMutationResponse> {
     try {
-      const video = await Video.findOne(videoId);
+      let video: Video | undefined;
+      const data = await redis.get(`video_${videoId}`);
+      if (data) {
+        video = JSON.parse(data);
+      } else {
+        video = await Video.findOne(videoId);
+        if (video)
+          await redis.set(
+            `video_${video.id}`,
+            JSON.stringify(video),
+            "ex",
+            24 * 60 * 1000
+          );
+      }
       if (!video) {
         return {
           code: 400,
@@ -514,7 +545,7 @@ class VideoResolver {
     @Ctx() { req }: Context
   ): Promise<VideoMutationResponse> {
     try {
-      const video = await Video.findOne(videoId);
+      let video = await Video.findOne(videoId);
       if (!video) {
         return {
           code: 400,
@@ -561,7 +592,7 @@ class VideoResolver {
   @FieldResolver((_return) => String, { nullable: true })
   async thumbnailUrl(@Root() parent: Video): Promise<string | undefined> {
     if (!parent.thumbnailUrl) {
-      const check = checkThumbnailImg(parent.id);
+      const check = await checkThumbnailImg(parent.id);
       if (!check) {
         return;
       } else {
@@ -602,13 +633,12 @@ class VideoResolver {
   }
 
   @FieldResolver((_type) => Int)
-  @UseMiddleware(getUserInfo)
   async voteStatus(
     @Root() parent: Video,
     @Ctx() { dataLoaders, req }: Context
   ) {
     const status = await dataLoaders.voteVideoStatusLoader.load({
-      userId: req.user?.id,
+      userId: req.userId,
       videoId: parent.id,
     });
     return status ? status : 0;

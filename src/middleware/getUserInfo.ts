@@ -1,20 +1,13 @@
-import { Context } from "../types/Context";
 import { MiddlewareFn } from "type-graphql";
-import jwt from "jsonwebtoken";
-import { Payload } from "../types/Payload";
 import { User } from "../entities/User";
+import { Context } from "../types/Context";
 
 export const getUserInfo: MiddlewareFn<Context> = async (
-  { context: { req, token } },
+  { context: { req } },
   next
 ) => {
   try {
-    if (!token) return next();
-    const payload = jwt.verify(
-      token,
-      process.env.JWT_SECRET as string
-    ) as Payload;
-    const user = await User.findOne({ id: payload.userId });
+    const user = await User.findOne({ id: req.userId });
     req.user = user;
     return next();
   } catch (error) {

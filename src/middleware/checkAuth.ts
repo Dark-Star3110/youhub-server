@@ -7,19 +7,26 @@ import jwt, { JsonWebTokenError } from "jsonwebtoken";
 import { NextFunction, Response, Request } from "express";
 
 export const checkAuth: MiddlewareFn<Context> = async (
-  { context: { req, token } },
+  { context: { req, redis } },
   next
 ) => {
+  if (!req.userId) throw new AuthenticationError("Unauthorized");
   try {
-    if (!token) {
-      throw new AuthenticationError("Unauthorized");
+    let user: User | undefined;
+    const data = await redis.get(`user_${req.userId}`);
+    if (data) {
+      user = JSON.parse(data);
+      if (!user) throw new AuthenticationError("Unauthorized");
+    } else {
+      user = await User.findOne({ id: req.userId });
+      if (!user) throw new AuthenticationError("Unauthorized");
+      redis.set(
+        `user_${req.userId}`,
+        JSON.stringify(user),
+        "ex",
+        24 * 60 * 1000
+      );
     }
-    const payload = jwt.verify(
-      token,
-      process.env.JWT_SECRET as string
-    ) as Payload;
-    const user = await User.findOne({ id: payload.userId });
-    if (!user) throw new AuthenticationError("Unauthorized");
     req.user = user;
     return next();
   } catch (error) {
@@ -54,6 +61,7 @@ export const checkAuth2 = async (
         msg: "Unauthorization",
       });
     else {
+      req.body.userId = user.id;
       return next();
     }
   } catch (error) {

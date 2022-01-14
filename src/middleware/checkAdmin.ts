@@ -1,27 +1,36 @@
-import { User } from './../entities/User';
-import { Payload } from './../types/Payload';
-import { Context } from "../types/Context";
-import { MiddlewareFn } from "type-graphql";
 import { AuthenticationError } from "apollo-server-express";
-import jwt, { JsonWebTokenError } from "jsonwebtoken"
+import { JsonWebTokenError } from "jsonwebtoken";
+import { MiddlewareFn } from "type-graphql";
+import { Context } from "../types/Context";
+import { User } from "./../entities/User";
 
-export const checkAdmin: MiddlewareFn<Context> = async ({context: {req, token}}, next) => {
+export const checkAdmin: MiddlewareFn<Context> = async (
+  { context: { req, redis } },
+  next
+) => {
+  if (!req.userId) throw new AuthenticationError("Unauthorized");
   try {
-    
-    if (!token) {
-      throw new AuthenticationError('Unauthorized')
+    let user: User | undefined;
+    const data = await redis.get(`user_${req.userId}`);
+    if (data) {
+      user = JSON.parse(data);
+      if (!user) throw new AuthenticationError("Unauthorized");
+    } else {
+      user = await User.findOne({ id: req.userId });
+      if (!user) throw new AuthenticationError("Unauthorized");
+      redis.set(
+        `user_${req.userId}`,
+        JSON.stringify(user),
+        "ex",
+        24 * 60 * 1000
+      );
     }
-    const payload = jwt.verify(token, process.env.JWT_SECRET as string) as Payload
-    const user = await User.findOne({id: payload.userId})
-    if (!user) throw new AuthenticationError('Unauthorized')
-    if (user.role!== 'ADMIN') 
-      throw new Error('ban dech co quyen')
-    req.user = user
-    return next()
+    if (user.role !== "ADMIN") throw new Error("ban dech co quyen");
+    req.user = user;
+    return next();
   } catch (error) {
     if (error instanceof JsonWebTokenError)
-      throw new AuthenticationError('Unauthorized')
-    else 
-      throw new Error('server error')
+      throw new AuthenticationError("Unauthorized");
+    else throw new Error("server error");
   }
-}
+};

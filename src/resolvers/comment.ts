@@ -102,11 +102,14 @@ export class CommentResolver {
   async createComment(
     @Arg("videoId") videoId: string,
     @Arg("createCommentInput") createCommentInput: CreateCommentInput,
-    @Ctx() { req }: Context,
+    @Ctx() { req, redis }: Context,
     @Arg("parentCommentId", { nullable: true }) parentCommentId?: string
   ): Promise<CommentMutationResponse> {
     try {
-      const video = await Video.findOne(videoId);
+      let video: Video | undefined;
+      const data = await redis.get(`video_${videoId}`);
+      if (data) video = JSON.parse(data);
+      else video = await Video.findOne(videoId);
       if (!video) {
         return {
           code: 400,

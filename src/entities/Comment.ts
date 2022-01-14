@@ -35,19 +35,19 @@ export class Comment extends BaseEntity {
   @Column({ nullable: true })
   public parentCommentId: string;
 
-  @Field()
+  @Field((_type) => String)
   @CreateDateColumn({
     type: "datetimeoffset",
   })
   public createdAt: Date;
 
-  @Field()
+  @Field((_type) => String)
   @UpdateDateColumn({
     type: "datetimeoffset",
   })
   public readonly updatedAt: Date;
 
-  @Field()
+  @Field((_type) => String)
   @DeleteDateColumn({
     type: "datetime2",
   })

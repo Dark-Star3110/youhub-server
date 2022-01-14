@@ -4,9 +4,9 @@ export default async function connectMSSQL() {
   try {
     const connection = await createConnection(config);
     console.log("connect thanh cong");
-    return connection
+    return connection;
   } catch (err) {
     console.log("connect that bai", err);
-    return
+    return;
   }
 }

@@ -1,13 +1,15 @@
+import { getUserIdToRequest } from "./../../utils/getUserId";
 import { ApolloServer } from "apollo-server-express";
 import { Express } from "express";
-import { getHeadersToken } from "../../utils/getHeadersToken";
 import { buildSchema } from "type-graphql";
 import { resolvers } from "../../resolvers/index";
 import { Connection } from "typeorm";
 import { buildDataLoaders } from "../../utils/dataLoader";
+import { Redis } from "ioredis";
 
 export const createApolloServer = async (
   app: Express,
+  redis?: Redis,
   connection?: Connection
 ) => {
   const apolloServer = new ApolloServer({
@@ -16,10 +18,10 @@ export const createApolloServer = async (
       validate: false,
     }),
     context: ({ req, res }) => ({
-      req,
+      req: getUserIdToRequest(req),
       res,
       connection,
-      token: getHeadersToken(req),
+      redis,
       dataLoaders: buildDataLoaders(),
     }),
   });

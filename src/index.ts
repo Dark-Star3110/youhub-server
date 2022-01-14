@@ -1,30 +1,33 @@
-import { configSocket } from "./config/socket/configSocket";
+import { redisConfig } from "./config/redis/index";
+import "reflect-metadata";
 require("dotenv").config();
 import "colors";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-// import { test } from "./test/db";
+import { configSocket } from "./config/socket/configSocket";
 import express from "express";
 import fileUpload from "express-fileupload";
+// import { test } from "./test/db";
 import connectMSSQL from "./config/mssql-db/connect";
 import { createApolloServer } from "./config/graphql-server/index";
 import routeConfig from "./routes";
-import { PORT } from "./constant";
+import { PORT, __prop__ } from "./constant";
 import connectMongo from "./config/mongo-db/connect";
 
 (async () => {
   const app = express();
 
   const connection = await connectMSSQL();
+  if (__prop__) {
+    await connection?.runMigrations();
+  }
   // await test();
   connectMongo();
+  const redis = redisConfig();
 
   app.use(
     cors({
-      origin: [
-        process.env.CLIENT_DOMAINS as string,
-        "https://studio.apollographql.com",
-      ],
+      origin: [process.env.CLIENT_DOMAINS, "https://studio.apollographql.com"],
       credentials: true,
     })
   );
@@ -37,7 +40,7 @@ import connectMongo from "./config/mongo-db/connect";
     res.send("<h1>Hello World!</h1>");
   });
 
-  createApolloServer(app, connection)
+  createApolloServer(app, redis, connection)
     .then((path) => {
       const server = app.listen(PORT, () => {
         console.log(

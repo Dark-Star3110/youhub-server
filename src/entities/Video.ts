@@ -52,13 +52,13 @@ export class Video extends BaseEntity {
   @Column()
   public userId!: string;
 
-  @Field()
+  @Field((_type) => String)
   @CreateDateColumn({
     type: "datetimeoffset",
   })
   public createdAt: Date;
 
-  @Field()
+  @Field((_type) => String)
   @UpdateDateColumn({
     type: "datetimeoffset",
   })
