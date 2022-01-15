@@ -1,3 +1,4 @@
+import { VoteComment } from "./../entities/VoteComment";
 import { SubscribeStatus } from "./../types/graphql-response/SubscribeStatus";
 import { VoteVideo } from "./../entities/VoteVideo";
 import DataLoader from "dataloader";
@@ -11,6 +12,11 @@ import { VoteType } from "../types/Action";
 interface VoteVideoCondition {
   userId?: string;
   videoId: string;
+}
+
+interface VoteCommentCondition {
+  userId?: string;
+  commentId: string;
 }
 
 interface SubscribeCondition {
@@ -102,6 +108,19 @@ const batchGetSubscribeStatus = async (
   });
 };
 
+const batchGetVoteCommentStatus = async (
+  conditions: VoteCommentCondition[]
+) => {
+  const voteCmts = await VoteComment.findByIds(conditions);
+  return conditions.map(
+    (condition) =>
+      voteCmts.find(
+        (vc) =>
+          vc.commentId === condition.commentId && vc.userId === condition.userId
+      )?.type
+  );
+};
+
 export const buildDataLoaders = () => ({
   userLoader: new DataLoader<string, User | undefined>((userIds) =>
     batchGetUsers(userIds as string[])
@@ -127,5 +146,11 @@ export const buildDataLoaders = () => ({
   subscribeStatusLoader: new DataLoader<SubscribeCondition, SubscribeStatus>(
     (subscribeConditions) =>
       batchGetSubscribeStatus(subscribeConditions as SubscribeCondition[])
+  ),
+  voteCommentStatusLoader: new DataLoader<
+    VoteCommentCondition,
+    VoteType | undefined
+  >((conditions) =>
+    batchGetVoteCommentStatus(conditions as VoteCommentCondition[])
   ),
 });

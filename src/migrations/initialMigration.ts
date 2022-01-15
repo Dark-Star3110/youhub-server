@@ -1,11 +1,11 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class fixmigration1642068937442 implements MigrationInterface {
-  name = "fixmigration1642068937442";
+export class mi1642153116779 implements MigrationInterface {
+  name = "mi1642153116779";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `CREATE TABLE "subscribe" ("chanelId" uniqueidentifier NOT NULL, "subscriberId" uniqueidentifier NOT NULL, "isNotification" bit NOT NULL CONSTRAINT "DF_58a857b5a9570136c157f9e9451" DEFAULT 0, "subscribedAt" datetime2 NOT NULL CONSTRAINT "DF_519617dce9c7e96cf4b80ee8973" DEFAULT getdate(), CONSTRAINT "PK_1e70aee18749f162d2e04a75ce0" PRIMARY KEY ("chanelId", "subscriberId"))`
+      `CREATE TABLE "subscribe" ("chanelId" uniqueidentifier NOT NULL, "subscriberId" uniqueidentifier NOT NULL, "isNotification" bit NOT NULL CONSTRAINT "DF_58a857b5a9570136c157f9e9451" DEFAULT 0, "subscribedAt" datetimeoffset NOT NULL CONSTRAINT "DF_519617dce9c7e96cf4b80ee8973" DEFAULT getdate(), CONSTRAINT "PK_1e70aee18749f162d2e04a75ce0" PRIMARY KEY ("chanelId", "subscriberId"))`
     );
     await queryRunner.query(
       `CREATE TABLE "vote_comment" ("userId" uniqueidentifier NOT NULL, "commentId" uniqueidentifier NOT NULL, "type" int CONSTRAINT CHK_e43477cbf2d5d4726ed4cf412d_ENUM CHECK(type IN ('1','-1')) NOT NULL, CONSTRAINT "PK_850fd745db571631011aaf92edd" PRIMARY KEY ("userId", "commentId"))`
@@ -20,7 +20,7 @@ export class fixmigration1642068937442 implements MigrationInterface {
       `CREATE TABLE "user" ("id" uniqueidentifier NOT NULL CONSTRAINT "DF_cace4a159ff9f2512dd42373760" DEFAULT NEWSEQUENTIALID(), "username" nvarchar(255), "password" nvarchar(255), "email" nvarchar(255) NOT NULL, "socialId" nvarchar(255), "firstName" nvarchar(255) NOT NULL, "lastName" nvarchar(255) NOT NULL CONSTRAINT "DF_f0e1b4ecdca13b177e2e3a0613c" DEFAULT ' ', "fullName" nvarchar(255), "channelDecscription" text, "image_url" nvarchar(255), "banner_id" nvarchar(255), "dateOfBirth" datetime, "role" nvarchar(255) CONSTRAINT CHK_ffcf40f029767c1533c9585043_ENUM CHECK(role IN ('ADMIN','USER','GUEST')) NOT NULL CONSTRAINT "DF_6620cd026ee2b231beac7cfe578" DEFAULT 'USER', "createdAt" datetime2 NOT NULL CONSTRAINT "DF_e11e649824a45d8ed01d597fd93" DEFAULT getdate(), "updatedAt" datetime2 NOT NULL CONSTRAINT "DF_80ca6e6ef65fb9ef34ea8c90f42" DEFAULT getdate(), CONSTRAINT "PK_cace4a159ff9f2512dd42373760" PRIMARY KEY ("id"))`
     );
     await queryRunner.query(
-      `CREATE TABLE "comment" ("id" uniqueidentifier NOT NULL CONSTRAINT "DF_0b0e4bbc8415ec426f87f3a88e2" DEFAULT NEWSEQUENTIALID(), "userId" uniqueidentifier NOT NULL, "videoId" nvarchar(255) NOT NULL, "content" nvarchar(255) NOT NULL, "parentCommentId" uniqueidentifier, "createdAt" datetimeoffset NOT NULL CONSTRAINT "DF_3edd3cdb7232a3e9220607eabba" DEFAULT getdate(), "updatedAt" datetimeoffset NOT NULL CONSTRAINT "DF_ac0081ff2cbd7d3bc5b0fab55c7" DEFAULT getdate(), "deletedAt" datetime2, CONSTRAINT "PK_0b0e4bbc8415ec426f87f3a88e2" PRIMARY KEY ("id"))`
+      `CREATE TABLE "comment" ("id" uniqueidentifier NOT NULL CONSTRAINT "DF_0b0e4bbc8415ec426f87f3a88e2" DEFAULT NEWSEQUENTIALID(), "userId" uniqueidentifier NOT NULL, "videoId" nvarchar(255) NOT NULL, "content" nvarchar(255) NOT NULL, "parentCommentId" uniqueidentifier, "createdAt" datetimeoffset NOT NULL CONSTRAINT "DF_3edd3cdb7232a3e9220607eabba" DEFAULT getdate(), "updatedAt" datetimeoffset NOT NULL CONSTRAINT "DF_ac0081ff2cbd7d3bc5b0fab55c7" DEFAULT getdate(), "deletedAt" datetimeoffset, CONSTRAINT "PK_0b0e4bbc8415ec426f87f3a88e2" PRIMARY KEY ("id"))`
     );
     await queryRunner.query(
       `CREATE TABLE "video" ("id" nvarchar(255) NOT NULL, "title" nvarchar(255) NOT NULL, "description" nvarchar(255) NOT NULL, "commentable" bit NOT NULL CONSTRAINT "DF_d208f66b06926d8444059cce3e1" DEFAULT 1, "thumbnailUrl" nvarchar(255), "size" nvarchar(255) NOT NULL, "userId" uniqueidentifier NOT NULL, "createdAt" datetimeoffset NOT NULL CONSTRAINT "DF_ea76b332802cccfa1e19c800336" DEFAULT getdate(), "updatedAt" datetimeoffset NOT NULL CONSTRAINT "DF_662a254cab721648cdf1d509089" DEFAULT getdate(), CONSTRAINT "PK_1a2f3856250765d72e7e1636c8e" PRIMARY KEY ("id"))`

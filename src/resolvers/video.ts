@@ -109,7 +109,7 @@ class VideoResolver {
   ): Promise<PaginatedVideos | undefined> {
     const realLimit = Math.min(limit, 20);
     let lastVideo: Video[] = [];
-    const where: FindConditions<Video>[] = [];
+    const where: FindConditions<Video>[] = [{ title: Like(`%${query}%`) }];
     const findOptions: FindManyOptions<Video> = {
       where,
       order: { createdAt: "DESC" },
@@ -118,7 +118,8 @@ class VideoResolver {
       select: ["id"],
       where: { fullName: Like(`%${query}%`) },
     });
-    where.push({ userId: In(users.map((user) => user.id)) });
+    if (users.length > 0)
+      where.push({ userId: In(users.map((user) => user.id)) });
     const catagories = await Catagory.find({
       select: ["id"],
       where: { name: Like(`%${query}%`) },
@@ -127,7 +128,8 @@ class VideoResolver {
       select: ["videoId"],
       where: { catagoryId: In(catagories.map((cata) => cata.id)) },
     });
-    where.push({ id: In(videosCata.map((v) => v.videoId)) });
+    if (videosCata.length > 0)
+      where.push({ id: In(videosCata.map((v) => v.videoId)) });
 
     const totalCount = await Video.count(findOptions);
     if (totalCount === 0) return;
@@ -138,7 +140,7 @@ class VideoResolver {
         order: { createdAt: "ASC" },
         take: 1,
       });
-      where.map((condition) => ({
+      findOptions.where = where.map((condition) => ({
         ...condition,
         createdAt: LessThan(cursor),
       }));
@@ -160,7 +162,7 @@ class VideoResolver {
   @Query((_return) => PaginatedVideos, { nullable: true })
   async videoUser(
     @Arg("limit", (_type) => Int) limit: number,
-    @Arg("userId", { nullable: true }) userId: string,
+    @Arg("userId", (_type) => ID) userId: string,
     @Arg("cursor", { nullable: true }) cursor?: string
   ): Promise<PaginatedVideos | undefined> {
     const realLimit = Math.min(limit, 20);
@@ -587,6 +589,16 @@ class VideoResolver {
         errors: [{ type: "server", error }],
       };
     }
+  }
+
+  @FieldResolver((_return) => String)
+  createdAt(@Root() parent: Video): string {
+    return parent.createdAt.toString();
+  }
+
+  @FieldResolver((_return) => String)
+  updatedAt(@Root() parent: Video): string {
+    return parent.updatedAt.toString();
   }
 
   @FieldResolver((_return) => String, { nullable: true })

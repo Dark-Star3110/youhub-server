@@ -12,6 +12,7 @@ import {
   Ctx,
   FieldResolver,
   ID,
+  Int,
   Mutation,
   Query,
   Resolver,
@@ -100,7 +101,7 @@ export class CommentResolver {
   @Mutation((_return) => CommentMutationResponse)
   @UseMiddleware(checkAuth)
   async createComment(
-    @Arg("videoId") videoId: string,
+    @Arg("videoId", (_type) => ID) videoId: string,
     @Arg("createCommentInput") createCommentInput: CreateCommentInput,
     @Ctx() { req, redis }: Context,
     @Arg("parentCommentId", { nullable: true }) parentCommentId?: string
@@ -230,6 +231,12 @@ export class CommentResolver {
     }
   }
 
+  /* @Mutation ((_return)=> CommentMutationResponse)
+  @UseMiddleware(checkAuth)
+  async deleteComment (@Arg('commentId', _type=>ID) commentId: string, ): Promise<CommentMutationResponse> {
+
+  } */
+
   @Mutation((_return) => CommentMutationResponse)
   @UseMiddleware(checkAuth)
   async voteComment(
@@ -346,5 +353,27 @@ export class CommentResolver {
     return await VoteComment.count({
       where: { commentId: parent.id, type: -1 },
     });
+  }
+
+  @FieldResolver((_type) => Int)
+  async voteStatus(
+    @Root() parent: Comment,
+    @Ctx() { dataLoaders, req }: Context
+  ) {
+    const status = await dataLoaders.voteCommentStatusLoader.load({
+      userId: req.userId,
+      commentId: parent.id,
+    });
+    return status ? status : 0;
+  }
+
+  @FieldResolver((_return) => String)
+  createdAt(@Root() parent: Comment): string {
+    return parent.createdAt.toString();
+  }
+
+  @FieldResolver((_return) => String)
+  updatedAt(@Root() parent: Comment): string {
+    return parent.updatedAt.toString();
   }
 }

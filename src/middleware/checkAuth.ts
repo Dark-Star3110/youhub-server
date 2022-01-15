@@ -61,10 +61,11 @@ export const checkAuth2 = async (
         msg: "Unauthorization",
       });
     else {
-      req.body.userId = user.id;
+      req.userId = user.id;
       return next();
     }
   } catch (error) {
+    console.log(error);
     res.status(500).json({
       success: false,
       msg: "server internal",

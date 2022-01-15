@@ -16,7 +16,6 @@ import connectMongo from "./config/mongo-db/connect";
 
 (async () => {
   const app = express();
-
   const connection = await connectMSSQL();
   if (__prop__) {
     await connection?.runMigrations();

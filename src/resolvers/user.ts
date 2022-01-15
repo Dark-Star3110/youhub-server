@@ -481,6 +481,16 @@ Hello ${user.username}
   }
 
   @FieldResolver((_return) => String)
+  createdAt(@Root() parent: User): string {
+    return parent.createdAt.toString();
+  }
+
+  @FieldResolver((_return) => String)
+  updatedAt(@Root() parent: User): string {
+    return parent.updatedAt.toString();
+  }
+
+  @FieldResolver((_return) => String)
   role(@Root() parent: User, @Ctx() { req }: Context): string {
     return parent.id === req.userId ? parent.role : "";
   }

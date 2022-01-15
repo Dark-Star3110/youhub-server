@@ -49,7 +49,7 @@ export class Comment extends BaseEntity {
 
   @Field((_type) => String)
   @DeleteDateColumn({
-    type: "datetime2",
+    type: "datetimeoffset",
   })
   public readonly deletedAt: Date;
 

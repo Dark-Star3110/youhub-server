@@ -1,5 +1,6 @@
 declare namespace NodeJS {
   export interface ProcessEnv {
+    NODE_ENV: "production" | "development" | "test";
     MSSQL_SERVERNAME: string;
     MSSQL_USERNAME: string;
     MSSQL_PASSWORD: string;
@@ -21,7 +22,9 @@ declare namespace NodeJS {
     SESSION_EXPIRY: string;
     REFRESH_TOKEN_EXPIRY: string;
     COOKIE_SECRET: string;
-    REDIS_SERVER_NAME: string;
-    REDIS_PASSWORD: string;
+    REDIS_SERVER_NAME_DEV: string;
+    REDIS_SERVER_NAME_PROP: string;
+    REDIS_PASSWORD_DEV: string;
+    REDIS_PASSWORD_PROP: string;
   }
 }
