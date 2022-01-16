@@ -56,10 +56,17 @@ export class CommentResolver {
   @Query((_retutn) => PaginatedComments, { nullable: true })
   @UseMiddleware(checkAuth)
   async comments(
-    @Arg("getCmtInput") getCmtInput: GetCommentInput
+    @Arg("getCmtInput") getCmtInput: GetCommentInput,
+    @Ctx() { redis }: Context
   ): Promise<PaginatedComments | undefined> {
     try {
-      const video = await Video.findOne(getCmtInput.videoId);
+      let video: Video | undefined;
+      const data = await redis.get(`video_${getCmtInput.videoId}`);
+      if (data) {
+        video = JSON.parse(data);
+      } else {
+        video = await Video.findOne(getCmtInput.videoId);
+      }
       if (!video || !video.commentable) return;
       let totalCount = 0;
       let lastComment: Comment[] = [];
@@ -125,7 +132,8 @@ export class CommentResolver {
     @Arg("videoId", (_type) => ID) videoId: string,
     @Arg("createCommentInput") createCommentInput: CreateCommentInput,
     @Ctx() { req, redis }: Context,
-    @Arg("parentCommentId", { nullable: true }) parentCommentId?: string
+    @Arg("parentCommentId", (_type) => ID, { nullable: true })
+    parentCommentId?: string
   ): Promise<CommentMutationResponse> {
     try {
       let video: Video | undefined;
@@ -177,6 +185,12 @@ export class CommentResolver {
         parentCommentId,
         ...createCommentInput,
       }).save();
+      await redis.set(
+        `comment_${newComment.id}`,
+        JSON.stringify(newComment),
+        "ex",
+        24 * 60 * 1000
+      );
       return {
         code: 200,
         success: true,
@@ -202,12 +216,25 @@ export class CommentResolver {
   @Mutation((_return) => CommentMutationResponse)
   @UseMiddleware(checkAuth)
   async updateComment(
-    @Arg("commentId") commentId: string,
+    @Arg("commentId", (_type) => ID) commentId: string,
     @Arg("updateCommentInput") updateCommentInput: UpdateCommentInput,
     @Ctx() { req, redis }: Context
   ): Promise<CommentMutationResponse> {
     try {
-      const comment = await Comment.findOne(commentId);
+      let comment: Comment | undefined;
+      const data = await redis.get(`comment_${commentId}`);
+      if (data) {
+        comment = JSON.parse(data);
+      } else {
+        comment = await Comment.findOne(commentId);
+        if (commentId)
+          await redis.set(
+            `comment_${commentId}`,
+            JSON.stringify(comment),
+            "ex",
+            24 * 60 * 1000
+          );
+      }
       if (!comment) {
         return {
           code: 400,
@@ -255,11 +282,51 @@ export class CommentResolver {
     }
   }
 
-  /* @Mutation ((_return)=> CommentMutationResponse)
+  @Mutation((_return) => CommentMutationResponse)
   @UseMiddleware(checkAuth)
-  async deleteComment (@Arg('commentId', _type=>ID) commentId: string, ): Promise<CommentMutationResponse> {
-
-  } */
+  async deleteComment(
+    @Arg("commentId", (_type) => ID) commentId: string,
+    @Ctx() { redis, req }: Context
+  ): Promise<CommentMutationResponse> {
+    try {
+      let comment: Comment | undefined;
+      const data = await redis.get(`comment_${commentId}`);
+      if (data) {
+        comment = JSON.parse(data);
+      } else {
+        comment = await Comment.findOne(commentId);
+      }
+      if (!comment) {
+        return {
+          code: 400,
+          success: false,
+          message: "Comment not found",
+        };
+      }
+      if (req.user?.role !== "ADMIN" && req.userId !== comment.userId) {
+        return {
+          code: 400,
+          success: false,
+          message: "demission action",
+        };
+      }
+      await comment.softRemove();
+      await redis.del(`comment_${commentId}`);
+      return {
+        code: 200,
+        success: true,
+        message: "delete comment successfully",
+      };
+    } catch (error) {
+      console.log(error);
+      return {
+        code: 500,
+        success: false,
+        message: "server error",
+        errors: [{ type: "server", error }],
+      };
+    }
+  }
 
   @Mutation((_return) => CommentMutationResponse)
   @UseMiddleware(checkAuth)
