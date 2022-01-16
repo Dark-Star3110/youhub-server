@@ -4,16 +4,13 @@ import Redis from "ioredis";
 export const redisConfig = () => {
   try {
     const redis = new Redis({
-      port: 6380,
+      port: __prop__ ? 6380 : 6379,
       host: __prop__
         ? process.env.REDIS_SERVER_NAME_PROP
         : process.env.REDIS_SERVER_NAME_DEV,
       password: __prop__
         ? process.env.REDIS_PASSWORD_PROP
         : process.env.REDIS_PASSWORD_DEV,
-      enableTLSForSentinelMode: true,
-      keyPrefix: "",
-      db: 0,
       tls: __prop__
         ? {
             servername: process.env.REDIS_SERVER_NAME_PROP,

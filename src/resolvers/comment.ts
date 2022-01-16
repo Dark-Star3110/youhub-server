@@ -28,8 +28,29 @@ import { FindCondition, FindManyOptions, IsNull, LessThan } from "typeorm";
 export class CommentResolver {
   @Query((_return) => Comment, { nullable: true })
   @UseMiddleware(checkAuth)
-  async comment(@Arg("id") id: string): Promise<Comment | undefined> {
-    return await Comment.findOne(id);
+  async comment(
+    @Arg("id") id: string,
+    @Ctx() { redis }: Context
+  ): Promise<Comment | undefined> {
+    try {
+      const data = await redis.get(`comment_${id}`);
+      if (data) {
+        return JSON.parse(data);
+      } else {
+        const comment = await Comment.findOne(id);
+        if (comment)
+          await redis.set(
+            `comment_${id}`,
+            JSON.stringify(comment),
+            "ex",
+            24 * 60 * 1000
+          );
+        return comment;
+      }
+    } catch (error) {
+      console.log(error);
+      return;
+    }
   }
 
   @Query((_retutn) => PaginatedComments, { nullable: true })
@@ -183,7 +204,7 @@ export class CommentResolver {
   async updateComment(
     @Arg("commentId") commentId: string,
     @Arg("updateCommentInput") updateCommentInput: UpdateCommentInput,
-    @Ctx() { req }: Context
+    @Ctx() { req, redis }: Context
   ): Promise<CommentMutationResponse> {
     try {
       const comment = await Comment.findOne(commentId);
@@ -208,8 +229,11 @@ export class CommentResolver {
         };
       }
 
-      comment.content = updateCommentInput.content;
-      await comment.save();
+      await Comment.update(
+        { id: commentId },
+        { content: updateCommentInput.content }
+      );
+      await redis.del(`comment_${commentId}`);
       return {
         code: 200,
         success: true,
@@ -242,7 +266,7 @@ export class CommentResolver {
   async voteComment(
     @Arg("commentId", (_type) => ID) commentId: string,
     @Arg("type", (_type) => VoteType) type: VoteType,
-    @Arg("action") action: Action,
+    @Arg("action", (_type) => Action) action: Action,
     @Ctx() { req }: Context
   ): Promise<CommentMutationResponse> {
     try {

@@ -20,7 +20,7 @@ const config: ConnectionOptions = {
         database: process.env.MSSQL_DBNAME,
       }),
   synchronize: !__prop__,
-  logging: true,
+  logging: false,
   entities,
   migrations: [path.join(__dirname, "../../migrations/*")],
   options: {

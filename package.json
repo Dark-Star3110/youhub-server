@@ -6,7 +6,8 @@
   "scripts": {
     "start": "nodemon dist/index.js",
     "watch": "tsc --watch",
-    "dev": "tsnd --respawn src/index.ts"
+    "dev": "tsnd --respawn src/index.ts",
+    "build": "tsc"
   },
   "keywords": [],
   "author": "",
@@ -20,7 +21,6 @@
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
     "express-fileupload": "^1.2.1",
-    "fluent-ffmpeg": "^2.1.2",
     "google-auth-library": "^7.10.3",
     "googleapis": "^92.0.0",
     "graphql": "^15.3.0",

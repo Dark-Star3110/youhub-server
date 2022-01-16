@@ -1,6 +1,6 @@
 import { CookieOptions } from "express";
 require("dotenv").config();
-export const __prop__ = process.env.NODE_ENV !== "production";
+export const __prop__ = process.env.NODE_ENV === "production";
 export const PORT = process.env.PORT || 8000;
 
 export const COOKIE_NAME = "refreshToken";
