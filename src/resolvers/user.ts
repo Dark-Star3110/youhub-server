@@ -79,8 +79,8 @@ class UserResolver {
             },
           ],
         };
-
-      const image_url = profileGenerateImg[Math.floor(Math.random() * 10)];
+      const c = signupInput.lastName.slice(0, 1).toUpperCase();
+      const image_url = profileGenerateImg[c];
 
       const newUser = User.create({ ...signupInput, image_url });
       await newUser.save();
@@ -482,7 +482,7 @@ Hello ${user.username}
 
   @FieldResolver((_return) => String)
   createdAt(@Root() parent: User): string {
-    return parent.createdAt.toString();
+    return new Date(parent.createdAt).toUTCString();
   }
 
   @FieldResolver((_return) => String)

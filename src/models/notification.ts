@@ -1,9 +1,31 @@
 import mongoose from "mongoose";
-import { getModelForClass, prop } from "@typegoose/typegoose";
+import { getModelForClass, pre, prop } from "@typegoose/typegoose";
+import { Field, ID, ObjectType, registerEnumType } from "type-graphql";
 
-export type Noti = "UPLOAD" | "COMMENT" | "RELY" | "OTHER" | "SUBSCRIBE";
+export enum NotiType {
+  UPLOAD = "UPLOAD",
+  COMMENT = "COMMENT",
+  RELY = "RELY",
+  SUBSCRIBE = "SUBSCRIBE",
+  LIKECOMMENT = "LIKECOMMENT",
+  LIKEVIDEO = "LIKEVIDEO",
+  OTHER = "OTHER",
+}
 
-class Notification {
+registerEnumType(NotiType, {
+  name: "Notify",
+});
+
+@pre<Notification>("save", function (next) {
+  this.from = this.from.toUpperCase();
+  this.to = this.to.toUpperCase();
+  this.videoId = this.videoId?.toUpperCase();
+  this.commentId = this.commentId?.toUpperCase();
+  next();
+})
+@ObjectType()
+export class Notification {
+  @Field((_type) => ID)
   _id!: mongoose.Types.ObjectId;
 
   @prop()
@@ -12,23 +34,26 @@ class Notification {
   @prop({ required: true })
   to: string;
 
+  @Field()
   @prop({
-    enum: ["UPLOAD", "COMMENT", "RELY", "OTHER", "SUBSCRIBE"],
+    enum: NotiType,
     required: true,
   })
-  type: Noti;
+  type: NotiType;
+
+  @Field()
+  @prop({ default: false })
+  readed: boolean;
 
   @prop()
   message?: string;
 
+  @Field({ nullable: true })
   @prop()
   videoId?: string;
 
-  @prop()
-  avatar_url?: string;
-
-  @prop()
-  img_url?: string;
+  @Field({ nullable: true })
+  commentId?: string;
 
   @prop({ default: Date.now, expires: 14 * 24 * 60 * 1000 })
   createdAt: Date;

@@ -8,6 +8,7 @@ import { Comment } from "./../entities/Comment";
 import { Subscribe } from "./../entities/Subscribe";
 import { VideoCatagory } from "./../entities/VideoCatagory";
 import { VoteType } from "../types/Action";
+import { Video } from "../entities/Video";
 
 interface VoteVideoCondition {
   userId?: string;
@@ -121,6 +122,34 @@ const batchGetVoteCommentStatus = async (
   );
 };
 
+const batchGetAvatarUrl = async (userIds: string[]) => {
+  const users = await User.findByIds(userIds, { select: ["image_url", "id"] });
+  return userIds.map((userId) => {
+    const user = users.find((user) => user.id === userId.toUpperCase());
+    return user && user.image_url
+      ? user.image_url.includes("http")
+        ? user.image_url
+        : `https://drive.google.com/uc?export=view&id=${user.image_url}`
+      : undefined;
+  });
+};
+
+const batchGetThumbnail = async (videoIds: string[]) => {
+  const videos = await Video.findByIds(videoIds, {
+    select: ["thumbnailUrl", "id"],
+  });
+  return videoIds.map((videoId) => {
+    const video = videos.find(
+      (video) => video.id.toLowerCase() === videoId.toLowerCase()
+    );
+    return !video || !video.thumbnailUrl
+      ? `https://drive.google.com/thumbnail?authuser=0&sz=h200&id=${videoId}`
+      : video.thumbnailUrl.includes("thumbnail")
+      ? video.thumbnailUrl
+      : `https://drive.google.com/uc?export=view&id=${video.thumbnailUrl}`;
+  });
+};
+
 export const buildDataLoaders = () => ({
   userLoader: new DataLoader<string, User | undefined>((userIds) =>
     batchGetUsers(userIds as string[])
@@ -152,5 +181,11 @@ export const buildDataLoaders = () => ({
     VoteType | undefined
   >((conditions) =>
     batchGetVoteCommentStatus(conditions as VoteCommentCondition[])
+  ),
+  avatarUrlLoader: new DataLoader<string, string | undefined>((userIds) =>
+    batchGetAvatarUrl(userIds as string[])
+  ),
+  thumbnailLoader: new DataLoader<string, string | undefined>((videoIds) =>
+    batchGetThumbnail(videoIds as string[])
   ),
 });

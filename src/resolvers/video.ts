@@ -608,10 +608,19 @@ class VideoResolver {
       if (!check) {
         return;
       } else {
+        await Video.update(
+          { id: parent.id },
+          {
+            thumbnailUrl: `https://drive.google.com/thumbnail?authuser=0&sz=h200&id=${parent.id}`,
+          }
+        );
         return `https://drive.google.com/thumbnail?authuser=0&sz=h200&id=${parent.id}`;
       }
-    } else
-      return `https://drive.google.com/uc?export=view&id=${parent.thumbnailUrl}`;
+    } else {
+      if (parent.thumbnailUrl.includes("thumbnail")) return parent.thumbnailUrl;
+      else
+        return `https://drive.google.com/uc?export=view&id=${parent.thumbnailUrl}`;
+    }
   }
 
   @FieldResolver((_type) => User, { nullable: true })

@@ -20,10 +20,10 @@ import connectMongo from "./config/mongo-db/connect";
   if (__prop__) {
     await connection?.runMigrations();
   }
-  // await test();
-  connectMongo();
+  await connectMongo();
   const redis = redisConfig();
 
+  // await test();
   app.use(
     cors({
       origin: [process.env.CLIENT_DOMAINS, "https://studio.apollographql.com"],

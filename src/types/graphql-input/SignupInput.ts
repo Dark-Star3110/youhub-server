@@ -3,20 +3,20 @@ import { Field, InputType } from "type-graphql";
 @InputType()
 export class SignupInput {
   @Field()
-  username: string
+  username: string;
 
   @Field()
-  email: string
+  email: string;
 
   @Field()
-  password: string
+  password: string;
 
   @Field()
-  firstName: string
+  firstName: string;
 
-  @Field({nullable: true})
-  lastName?: string
+  @Field()
+  lastName: string;
 
-  @Field(_type=> Date,{nullable: true})
-  dateOfBirth?: Date
+  @Field((_type) => Date, { nullable: true })
+  dateOfBirth?: Date;
 }

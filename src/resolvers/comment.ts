@@ -227,13 +227,6 @@ export class CommentResolver {
         comment = JSON.parse(data);
       } else {
         comment = await Comment.findOne(commentId);
-        if (commentId)
-          await redis.set(
-            `comment_${commentId}`,
-            JSON.stringify(comment),
-            "ex",
-            24 * 60 * 1000
-          );
       }
       if (!comment) {
         return {
@@ -334,10 +327,24 @@ export class CommentResolver {
     @Arg("commentId", (_type) => ID) commentId: string,
     @Arg("type", (_type) => VoteType) type: VoteType,
     @Arg("action", (_type) => Action) action: Action,
-    @Ctx() { req }: Context
+    @Ctx() { req, redis }: Context
   ): Promise<CommentMutationResponse> {
     try {
-      const comment = await Comment.findOne(commentId);
+      let comment: Comment | undefined;
+      const data = await redis.get(`comment_${commentId}`);
+      if (data) {
+        comment = JSON.parse(data);
+      } else {
+        comment = await Comment.findOne(commentId);
+        if (comment) {
+          await redis.set(
+            `comment_${commentId}`,
+            JSON.stringify(comment),
+            "ex",
+            (24 * 60) & 1000
+          );
+        }
+      }
       if (!comment) {
         return {
           code: 400,
