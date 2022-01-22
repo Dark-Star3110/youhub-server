@@ -43,7 +43,7 @@ export class User extends BaseEntity {
 
   @Field()
   @Column()
-  public firstName!: string;
+  public firstName: string;
 
   @Field()
   @Column({ default: " " })
@@ -54,7 +54,7 @@ export class User extends BaseEntity {
   public fullName: string;
 
   @Field({ nullable: true })
-  @Column("text", { nullable: true })
+  @Column("ntext", { nullable: true })
   channelDecscription: string;
 
   @Field({ nullable: true })

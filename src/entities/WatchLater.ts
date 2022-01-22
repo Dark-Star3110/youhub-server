@@ -23,12 +23,14 @@ export class WatchLater extends BaseEntity {
 
   @ManyToOne((_type) => User, (user) => user.videosWatchLaterConnection, {
     cascade: true,
+    onDelete: "CASCADE",
   })
   @JoinColumn({ name: "userId" })
   public readonly user: User;
 
   @ManyToOne((_type) => Video, (video) => video.usersWatchLaterConnection, {
     cascade: true,
+    onDelete: "CASCADE",
   })
   @JoinColumn({ name: "videoId" })
   public readonly video: Video;

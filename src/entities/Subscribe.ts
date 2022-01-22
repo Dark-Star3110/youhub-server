@@ -20,17 +20,19 @@ export class Subscribe extends BaseEntity {
   })
   public subscriberId: string;
 
-  @ManyToOne((_type) => User, (user) => user.chanelsConnection, {
-    cascade: true,
-  })
-  @JoinColumn({ name: "chanelId" })
-  public readonly chanel: User;
-
   @ManyToOne((_type) => User, (user) => user.subscribersConnection, {
     cascade: true,
+    onDelete: "CASCADE",
   })
-  @JoinColumn({ name: "subscriberId" })
+  @JoinColumn({ name: "subscriberId", referencedColumnName: "id" })
   public readonly subscriber: User;
+
+  @ManyToOne((_type) => User, (user) => user.chanelsConnection, {
+    cascade: true,
+    // onDelete: "CASCADE",
+  })
+  @JoinColumn({ name: "chanelId", referencedColumnName: "id" })
+  public readonly chanel: User;
 
   @Column({
     default: false,

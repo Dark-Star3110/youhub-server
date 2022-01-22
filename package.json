@@ -7,7 +7,7 @@
     "start": "nodemon dist/index.js",
     "watch": "tsc --watch",
     "dev": "tsnd --respawn src/index.ts",
-    "build": "tsc"
+    "build": "rm -rf dist && tsc"
   },
   "keywords": [],
   "author": "",

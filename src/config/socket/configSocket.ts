@@ -22,7 +22,6 @@ export const configSocket = async (app: ExpressServer) => {
     socket.on("offline", (userId) => {
       if (!userId) return;
       try {
-        console.log(socket.id);
         socket.leave(userId);
       } catch (error) {
         console.log(error);
@@ -43,10 +42,22 @@ export const configSocket = async (app: ExpressServer) => {
       }
     });
 
-    socket.on("read-notify", async (userId) => {
+    socket.on("read-all-notify", async (userId) => {
       if (!userId) return;
       try {
         await NotificationStore.updateMany({ to: userId }, { readed: true });
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    socket.on("read-notify", async (userId, notiId) => {
+      if (!userId) return;
+      try {
+        await NotificationStore.updateOne(
+          { _id: notiId, to: userId },
+          { readed: true }
+        );
       } catch (error) {
         console.log(error);
       }
@@ -77,6 +88,7 @@ export const configSocket = async (app: ExpressServer) => {
         });
         if (!comment || !video) return;
         io.to(videoId).emit("message", payload);
+        if (comment.user.id === video.user.id) return;
         const noti = await NotificationStore.create({
           from: comment.user.id,
           to: video.user.id,
@@ -84,6 +96,7 @@ export const configSocket = async (app: ExpressServer) => {
           videoId,
           type: NotiType.COMMENT,
         });
+
         io.to(video.user.id).emit("notify", noti._id);
       } catch (error) {
         console.log(error);
@@ -107,6 +120,104 @@ export const configSocket = async (app: ExpressServer) => {
           await noti.save();
           io.to(subscriber.subscriberId).emit("notify", noti._id);
         });
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    socket.on("subscribe", async (chanelId: string, subscriberId: string) => {
+      try {
+        const exsistingNoti = await NotificationStore.findOne({
+          from: subscriberId,
+          to: chanelId,
+          type: NotiType.SUBSCRIBE,
+        });
+        if (exsistingNoti) return;
+        const noti = await NotificationStore.create({
+          from: subscriberId,
+          to: chanelId,
+          type: NotiType.SUBSCRIBE,
+        });
+        io.to(chanelId).emit("notify", noti._id);
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    socket.on("reply-comment", async (replyId, ownId, commentId) => {
+      try {
+        const noti = await NotificationStore.create({
+          from: replyId,
+          to: ownId,
+          commentId,
+        });
+        io.to(ownId).emit("notify", noti._id);
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    socket.on("like-video", async (userId, videoId) => {
+      try {
+        const video = await Video.findOne(videoId, { relations: ["user"] });
+        if (!userId || !video || video.user.id === userId) {
+          return;
+        }
+        const exsistingNoti = await NotificationStore.findOne({
+          from: userId,
+          to: video.user.id,
+          type: NotiType.LIKEVIDEO,
+          videoId,
+        });
+        if (exsistingNoti) return;
+        const noti = await NotificationStore.create({
+          from: userId,
+          to: video.user.id,
+          type: NotiType.LIKEVIDEO,
+          videoId,
+        });
+        io.to(video.user.id).emit("notify", noti._id);
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    socket.on("like-comment", async (userId, commentId, videoId) => {
+      try {
+        const comment = await Comment.findOne(commentId, {
+          relations: ["user"],
+        });
+        if (!userId || !comment || comment.user.id === userId) {
+          return;
+        }
+        const exsistingNoti = await NotificationStore.findOne({
+          from: userId,
+          to: comment.user.id,
+          type: NotiType.LIKECOMMENT,
+          commentId,
+        });
+        if (exsistingNoti) return;
+        const noti = await NotificationStore.create({
+          from: userId,
+          to: comment.user.id,
+          type: NotiType.LIKECOMMENT,
+          commentId,
+          videoId,
+        });
+        io.to(comment.user.id).emit("notify", noti._id);
+      } catch (error) {
+        console.log(error);
+      }
+    });
+
+    socket.on("other-notify", async (toId, message, fromId) => {
+      try {
+        const noti = await NotificationStore.create({
+          to: toId,
+          message,
+          ...(fromId ? { from: fromId } : {}),
+        });
+        io.to(toId).emit("notify", noti._id);
       } catch (error) {
         console.log(error);
       }

@@ -10,7 +10,14 @@ import {
   Root,
   UseMiddleware,
 } from "type-graphql";
-import { FindConditions, FindManyOptions, In, LessThan, Like } from "typeorm";
+import {
+  FindConditions,
+  FindManyOptions,
+  In,
+  LessThan,
+  Like,
+  Not,
+} from "typeorm";
 import { Action, VoteType } from "../types/Action";
 import { checkThumbnailImg } from "../utils/checkThumbnailImg";
 import { deleteFile } from "../utils/deleteFile";
@@ -83,6 +90,11 @@ class VideoResolver {
           createdAt: LessThan(cursor),
         };
       }
+
+      findOptions.cache = {
+        id: `video_${cursor}`,
+        milliseconds: 60000,
+      };
 
       const videos = await Video.find(findOptions);
       if (videos.length <= 0) return;
@@ -160,46 +172,121 @@ class VideoResolver {
   }
 
   @Query((_return) => PaginatedVideos, { nullable: true })
+  async videoConcern(
+    @Arg("limit", (_type) => Int) limit: number,
+    @Arg("videoId", (_type) => ID) videoId: string,
+    @Ctx() { redis }: Context,
+    @Arg("cursor", { nullable: true }) cursor?: string
+  ): Promise<PaginatedVideos | undefined> {
+    try {
+      console.log(videoId);
+      const realLimit = Math.min(limit, 20);
+      let videosId: string[] = [];
+      let video: Video | undefined;
+      let lastVideo: Video[] = [];
+      const findOptions: FindManyOptions<Video> = {
+        order: {
+          createdAt: "DESC",
+        },
+      };
+      const data = await redis.get(`video_${videoId}`);
+      if (data) video = JSON.parse(data);
+      else video = await Video.findOne(videoId, { select: ["userId"] });
+      const videoCategory = await VideoCatagory.find({
+        where: { videoId },
+        select: ["catagoryId"],
+      });
+      if (videoCategory.length > 0) {
+        const categoriesId = videoCategory.map((vc) => vc.catagoryId);
+        const videoCategories = await VideoCatagory.find({
+          where: { catagoryId: In(categoriesId), videoId: Not(videoId) },
+          select: ["videoId"],
+        });
+        videosId = videoCategories.map((vc) => vc.videoId);
+      }
+      console.log(videosId);
+      findOptions.where = [
+        { userId: video?.userId, id: Not(videoId) },
+        { id: In(videosId) },
+      ];
+      const totalCount = await Video.count(findOptions);
+      if (totalCount <= 0) return;
+
+      findOptions.take = realLimit;
+      if (cursor) {
+        findOptions.where = findOptions.where.map(
+          (option: FindConditions<Video>) => ({
+            ...option,
+            createdAt: LessThan(cursor),
+          })
+        );
+        lastVideo = await Video.find({
+          ...findOptions,
+          order: { createdAt: "ASC" },
+        });
+      }
+      const videos = await Video.find(findOptions);
+      return {
+        totalCount,
+        cursor: videos[videos.length - 1].createdAt,
+        hasMore: cursor
+          ? videos[videos.length - 1].createdAt.toString() !==
+            lastVideo[0].createdAt.toString()
+          : videos.length !== totalCount,
+        paginatedVideos: videos,
+      };
+    } catch (error) {
+      console.log(error);
+      return;
+    }
+  }
+
+  @Query((_return) => PaginatedVideos, { nullable: true })
   async videoUser(
     @Arg("limit", (_type) => Int) limit: number,
     @Arg("userId", (_type) => ID) userId: string,
     @Arg("cursor", { nullable: true }) cursor?: string
   ): Promise<PaginatedVideos | undefined> {
-    const realLimit = Math.min(limit, 20);
-    let lastVideo: Video[] = [];
-    const totalCount = await Video.count({
-      where: { userId },
-    });
-    if (totalCount === 0) return;
-    const findOptions: FindManyOptions<Video> = {
-      order: {
-        createdAt: "DESC",
-      },
-      where: { userId },
-      take: realLimit,
-    };
-    if (cursor) {
-      lastVideo = await Video.find({
+    try {
+      const realLimit = Math.min(limit, 20);
+      let lastVideo: Video[] = [];
+      const totalCount = await Video.count({
         where: { userId },
-        order: { createdAt: "ASC" },
-        take: 1,
       });
-      findOptions.where = {
-        userId,
-        createdAt: LessThan(cursor),
+      if (totalCount === 0) return;
+      const findOptions: FindManyOptions<Video> = {
+        order: {
+          createdAt: "DESC",
+        },
+        where: { userId },
+        take: realLimit,
       };
+      if (cursor) {
+        lastVideo = await Video.find({
+          where: { userId },
+          order: { createdAt: "ASC" },
+          take: 1,
+        });
+        findOptions.where = {
+          userId,
+          createdAt: LessThan(cursor),
+        };
+      }
+      const videos = await Video.find(findOptions);
+      if (videos.length <= 0) return;
+      return {
+        totalCount,
+        cursor: videos[videos.length - 1].createdAt,
+        hasMore: cursor
+          ? videos[videos.length - 1].createdAt.toString() !==
+            lastVideo[0].createdAt.toString()
+          : totalCount !== videos.length,
+        paginatedVideos: videos,
+      };
+    } catch (error) {
+      console.log(error);
+      return;
     }
-    const videos = await Video.find(findOptions);
-    if (videos.length <= 0) return;
-    return {
-      totalCount,
-      cursor: videos[videos.length - 1].createdAt,
-      hasMore: cursor
-        ? videos[videos.length - 1].createdAt.toString() !==
-          lastVideo[0].createdAt.toString()
-        : totalCount !== videos.length,
-      paginatedVideos: videos,
-    };
   }
 
   @Query((_return) => PaginatedVideos, { nullable: true })

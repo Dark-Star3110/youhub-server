@@ -39,7 +39,7 @@ class NotifyResolver {
           });
           return `${user?.fullName} đã bình luận về video của bạn: ${video?.title}`;
         }
-        case "RELY": {
+        case "REPLY": {
           const comment = await Comment.findOne(doc.commentId, {
             select: ["content"],
           });
@@ -65,6 +65,12 @@ class NotifyResolver {
             select: ["fullName"],
           });
           return `${user?.fullName} đã thích video của bạn: ${video?.title}`;
+        }
+        case "SUBSCRIBE": {
+          const subscriber = await User.findOne(doc.from, {
+            select: ["fullName"],
+          });
+          return `${subscriber?.fullName} đã đăng ký kênh của bạn`;
         }
         case "OTHER": {
           const user = await User.findOne(doc.from, {
@@ -106,7 +112,6 @@ class NotifyResolver {
   ): Promise<Notification | null | undefined> {
     try {
       const noti = await NotificationStore.findById(id);
-
       if (!noti || noti.to !== req.userId) return;
       return noti;
     } catch (error) {

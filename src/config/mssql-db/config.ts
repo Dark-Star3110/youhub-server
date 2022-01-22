@@ -20,11 +20,29 @@ const config: ConnectionOptions = {
         database: process.env.MSSQL_DBNAME,
       }),
   synchronize: !__prop__,
-  logging: false,
+  logging: true,
   entities,
   migrations: [path.join(__dirname, "../../migrations/*")],
   options: {
     encrypt: __prop__,
+  },
+  cache: {
+    type: "ioredis",
+    options: {
+      port: __prop__ ? 6380 : 6379,
+      host: __prop__
+        ? process.env.REDIS_SERVER_NAME_PROP
+        : process.env.REDIS_SERVER_NAME_DEV,
+      password: __prop__
+        ? process.env.REDIS_PASSWORD_PROP
+        : process.env.REDIS_PASSWORD_DEV,
+      tls: __prop__
+        ? {
+            servername: process.env.REDIS_SERVER_NAME_PROP,
+          }
+        : undefined,
+    },
+    duration: 30 * 1000,
   },
 };
 

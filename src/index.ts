@@ -30,6 +30,7 @@ import connectMongo from "./config/mongo-db/connect";
       credentials: true,
     })
   );
+  app.set("trust proxy", 1);
   app.use(cookieParser(process.env.COOKIE_SECRET));
   app.use(fileUpload());
 

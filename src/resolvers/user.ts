@@ -91,6 +91,7 @@ class UserResolver {
         message: "sign up successfully",
       };
     } catch (error) {
+      console.log(error);
       return {
         code: 500,
         success: false,
@@ -114,6 +115,13 @@ class UserResolver {
     let user: User | null | undefined;
     if (socialLogin) {
       user = await loginSocial(socialLogin);
+      if (user === null)
+        return {
+          code: 400,
+          success: false,
+          message: `email has ready existed`,
+          errors: [{ type: "email", error: "email has ready existed" }],
+        };
       if (!user)
         return {
           code: 401,
@@ -312,7 +320,7 @@ class UserResolver {
       }
       return {
         code: 200,
-        success: false,
+        success: true,
         message: "Update user information successfully",
       };
     } catch (error) {
@@ -516,7 +524,7 @@ Hello ${user.username}
       return `https://drive.google.com/uc?export=view&id=${parent.image_url}`;
   }
 
-  @FieldResolver((_return) => String)
+  @FieldResolver((_return) => String, { nullable: true })
   banner_url(@Root() parent: User) {
     return parent.banner_id
       ? `https://drive.google.com/uc?export=view&id=${parent.banner_id}`

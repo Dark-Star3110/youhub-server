@@ -32,7 +32,7 @@ export class Video extends BaseEntity {
   public title!: string;
 
   @Field()
-  @Column()
+  @Column({ type: "nvarchar", length: 3000 })
   public description!: string;
 
   @Field()
@@ -64,16 +64,6 @@ export class Video extends BaseEntity {
   })
   public readonly updatedAt: Date;
 
-  // begin user own relationship
-  @Field((_type) => User)
-  @ManyToOne((_type) => User, (user) => user.videos, {
-    cascade: true,
-    nullable: false,
-  })
-  @JoinColumn({ name: "userId" })
-  public readonly user: User;
-  // end user own relationship
-
   // begin user vote video relationship
 
   @OneToMany((_to) => VoteVideo, (voteVideo) => voteVideo.video, {
@@ -104,4 +94,15 @@ export class Video extends BaseEntity {
 
   @Field((_type) => [Catagory], { nullable: true })
   public catagories: Catagory[];
+
+  // begin user own relationship
+  @Field((_type) => User)
+  @ManyToOne((_type) => User, (user) => user.videos, {
+    cascade: true,
+    nullable: false,
+    // onDelete: "CASCADE",
+  })
+  @JoinColumn({ name: "userId" })
+  public readonly user: User;
+  // end user own relationship
 }

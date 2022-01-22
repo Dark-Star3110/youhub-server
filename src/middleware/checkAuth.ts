@@ -62,6 +62,7 @@ export const checkAuth2 = async (
       });
     else {
       req.userId = user.id;
+      req.user = user;
       return next();
     }
   } catch (error) {

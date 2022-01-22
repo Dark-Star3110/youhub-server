@@ -5,7 +5,7 @@ import { Field, ID, ObjectType, registerEnumType } from "type-graphql";
 export enum NotiType {
   UPLOAD = "UPLOAD",
   COMMENT = "COMMENT",
-  RELY = "RELY",
+  RELY = "REPLY",
   SUBSCRIBE = "SUBSCRIBE",
   LIKECOMMENT = "LIKECOMMENT",
   LIKEVIDEO = "LIKEVIDEO",
@@ -53,6 +53,7 @@ export class Notification {
   videoId?: string;
 
   @Field({ nullable: true })
+  @prop()
   commentId?: string;
 
   @prop({ default: Date.now, expires: 14 * 24 * 60 * 1000 })

@@ -5,16 +5,18 @@ export const PORT = process.env.PORT || 8000;
 
 export const COOKIE_NAME = "refreshToken";
 export const COOKIE_OPTIONS: CookieOptions = {
+  domain: __prop__ ? process.env.CLIENT_DOMAINS : undefined,
   httpOnly: true,
-  secure: __prop__,
-  signed: true,
+  secure: false,
   maxAge: eval(process.env.REFRESH_TOKEN_EXPIRY) * 1000,
-  sameSite: "lax",
+  sameSite: "none",
+  signed: true,
 };
 
 export const FOLDER_THUMBNAIL_IMAGE = "1Pwyz9kilqTILuKlIQ6qWHR7UbpC2IhrB";
 export const FOLDER_VIDEO_ID = "1qY7Fcbn4QhM0nEkPpPu_C2kkwiM4NRwC";
 export const FOLDER_PROFILE_IMAGE = "1x42t2CwV0x9N1dz_KPXEdykrz4wXltzr";
+export const FOLDER_BANNER_IMAGE = "1POdhrGo_FnG4oqY4DJNcoX34AH3k-gga";
 
 export const profileGenerateImg: { [key: string]: string } = {
   A: "1QUcAjC3ZYuaRKB1WfEhdbI-5jFIhumhM",

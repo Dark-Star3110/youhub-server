@@ -25,12 +25,14 @@ export class VoteVideo extends BaseEntity {
 
   @ManyToOne((_to) => User, (user) => user.voteVideosConnection, {
     cascade: true,
+    onDelete: "CASCADE",
   })
   @JoinColumn({ name: "userId" })
   public readonly user: User;
 
   @ManyToOne((_to) => Video, (video) => video.voteVideosConnection, {
     cascade: true,
+    onDelete: "CASCADE",
   })
   @JoinColumn({ name: "videoId" })
   public readonly video: Video;
