@@ -303,7 +303,7 @@ export class CommentResolver {
           message: "demission action",
         };
       }
-      await comment.softRemove();
+      await Comment.softRemove(comment);
       await redis.del(`comment_${commentId}`);
       return {
         code: 200,

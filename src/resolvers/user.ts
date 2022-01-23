@@ -315,9 +315,7 @@ class UserResolver {
           ...updateInput,
         }
       );
-      if ((await redis.exists(`user_${user.id}`)) === 0) {
-        await redis.del(`user_${user.id}`);
-      }
+      await redis.del(`user_${user.id}`);
       return {
         code: 200,
         success: true,

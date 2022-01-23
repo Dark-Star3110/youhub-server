@@ -397,15 +397,28 @@ class VideoResolver {
   @Mutation((_return) => VideoMutationResponse)
   @UseMiddleware(checkAuth)
   async createVideo(
-    @Arg("createVideoInput") createVideoInput: CreateVideoInput,
-    @Ctx() { req }: Context
+    @Arg("createVideoInput")
+    { categoriesId, ...restCreateVideoInput }: CreateVideoInput,
+    @Ctx() { req, connection }: Context
   ): Promise<VideoMutationResponse> {
     try {
-      const video = Video.create({
-        ...createVideoInput,
-        userId: req.user?.id,
+      let video: Video | undefined;
+      await connection.transaction(async (transactionEntityManager) => {
+        video = await transactionEntityManager
+          .create(Video, {
+            ...restCreateVideoInput,
+            userId: req.userId,
+          })
+          .save();
+        categoriesId?.map(async (categoryId) => {
+          await transactionEntityManager
+            .create(VideoCatagory, {
+              catagoryId: categoryId,
+              videoId: restCreateVideoInput.id,
+            })
+            .save();
+        });
       });
-      await video.save();
       return {
         code: 200,
         success: true,
@@ -414,7 +427,6 @@ class VideoResolver {
       };
     } catch (error) {
       console.log(error);
-
       return {
         code: 500,
         success: false,
@@ -710,7 +722,7 @@ class VideoResolver {
     }
   }
 
-  @FieldResolver((_type) => User, { nullable: true })
+  @FieldResolver((_return) => User, { nullable: true })
   async user(
     @Root() parent: Video,
     @Ctx() { dataLoaders }: Context
@@ -718,21 +730,21 @@ class VideoResolver {
     return await dataLoaders.userLoader.load(parent.userId);
   }
 
-  @FieldResolver((_type) => Number, { nullable: true })
+  @FieldResolver((_return) => Number, { nullable: true })
   async numUsersLiked(@Root() parent: Video): Promise<number | undefined> {
     return await VoteVideo.count({
       where: { videoId: parent.id, type: 1 },
     });
   }
 
-  @FieldResolver((_type) => Number, { nullable: true })
+  @FieldResolver((_return) => Number, { nullable: true })
   async numUsersDisLiked(@Root() parent: Video): Promise<Number | undefined> {
     return await VoteVideo.count({
       where: { videoId: parent.id, type: -1 },
     });
   }
 
-  @FieldResolver((_type) => [Catagory], { nullable: true })
+  @FieldResolver((_return) => [Catagory], { nullable: true })
   async catagories(
     @Root() parent: Video,
     @Ctx() { dataLoaders }: Context
@@ -740,7 +752,7 @@ class VideoResolver {
     return await dataLoaders.catagoryLoader.load(parent.id);
   }
 
-  @FieldResolver((_type) => Int)
+  @FieldResolver((_return) => Int)
   async voteStatus(
     @Root() parent: Video,
     @Ctx() { dataLoaders, req }: Context
@@ -750,6 +762,17 @@ class VideoResolver {
       videoId: parent.id,
     });
     return status ? status : 0;
+  }
+
+  @FieldResolver((_return) => Boolean)
+  async watchLaterStatus(
+    @Root() parent: Video,
+    @Ctx() { req, dataLoaders }: Context
+  ) {
+    return await dataLoaders.watchLaterStatusLoader.load({
+      videoId: parent.id,
+      userId: req.userId,
+    });
   }
 }
 

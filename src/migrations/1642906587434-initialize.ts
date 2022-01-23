@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class initial1642651017239 implements MigrationInterface {
-  name = "initial1642651017239";
+export class initialize1642906587434 implements MigrationInterface {
+  name = "initialize1642906587434";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
@@ -32,46 +32,46 @@ export class initial1642651017239 implements MigrationInterface {
       `CREATE TABLE "catagory" ("id" uniqueidentifier NOT NULL CONSTRAINT "DF_1c4ef76d48ef45098ff3aece7c4" DEFAULT NEWSEQUENTIALID(), "name" nvarchar(255) NOT NULL, CONSTRAINT "PK_1c4ef76d48ef45098ff3aece7c4" PRIMARY KEY ("id"))`
     );
     await queryRunner.query(
+      `ALTER TABLE "subscribe" ADD CONSTRAINT "FK_ce4d1992337c8dc5e9d7173a2cd" FOREIGN KEY ("subscriberId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
+    );
+    await queryRunner.query(
       `ALTER TABLE "subscribe" ADD CONSTRAINT "FK_44b06318cd760c6acf1ede92a91" FOREIGN KEY ("chanelId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
     );
     await queryRunner.query(
-      `ALTER TABLE "subscribe" ADD CONSTRAINT "FK_ce4d1992337c8dc5e9d7173a2cd" FOREIGN KEY ("subscriberId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
+      `ALTER TABLE "vote_comment" ADD CONSTRAINT "FK_0977824b6350e028b80edb35d88" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
     );
     await queryRunner.query(
-      `ALTER TABLE "vote_comment" ADD CONSTRAINT "FK_0977824b6350e028b80edb35d88" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
+      `ALTER TABLE "vote_comment" ADD CONSTRAINT "FK_591b5731ef7824c577687746f5e" FOREIGN KEY ("commentId") REFERENCES "comment"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
     );
     await queryRunner.query(
-      `ALTER TABLE "vote_comment" ADD CONSTRAINT "FK_591b5731ef7824c577687746f5e" FOREIGN KEY ("commentId") REFERENCES "comment"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
+      `ALTER TABLE "vote_video" ADD CONSTRAINT "FK_f2e351fd00ae528365db88be664" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
     );
     await queryRunner.query(
-      `ALTER TABLE "vote_video" ADD CONSTRAINT "FK_f2e351fd00ae528365db88be664" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
+      `ALTER TABLE "vote_video" ADD CONSTRAINT "FK_31a25431b0d132dad4e47767b00" FOREIGN KEY ("videoId") REFERENCES "video"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
     );
     await queryRunner.query(
-      `ALTER TABLE "vote_video" ADD CONSTRAINT "FK_31a25431b0d132dad4e47767b00" FOREIGN KEY ("videoId") REFERENCES "video"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
+      `ALTER TABLE "watch_later" ADD CONSTRAINT "FK_f971d015c35cf30740e90e183eb" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
     );
     await queryRunner.query(
-      `ALTER TABLE "watch_later" ADD CONSTRAINT "FK_f971d015c35cf30740e90e183eb" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
-    );
-    await queryRunner.query(
-      `ALTER TABLE "watch_later" ADD CONSTRAINT "FK_6767216d90a81f6eaf9d5bdf108" FOREIGN KEY ("videoId") REFERENCES "video"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
+      `ALTER TABLE "watch_later" ADD CONSTRAINT "FK_6767216d90a81f6eaf9d5bdf108" FOREIGN KEY ("videoId") REFERENCES "video"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
     );
     await queryRunner.query(
       `ALTER TABLE "comment" ADD CONSTRAINT "FK_73aac6035a70c5f0313c939f237" FOREIGN KEY ("parentCommentId") REFERENCES "comment"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
     );
     await queryRunner.query(
-      `ALTER TABLE "comment" ADD CONSTRAINT "FK_c0354a9a009d3bb45a08655ce3b" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
+      `ALTER TABLE "comment" ADD CONSTRAINT "FK_fae151444dcca85704ef1fbb285" FOREIGN KEY ("videoId") REFERENCES "video"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
     );
     await queryRunner.query(
-      `ALTER TABLE "comment" ADD CONSTRAINT "FK_fae151444dcca85704ef1fbb285" FOREIGN KEY ("videoId") REFERENCES "video"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
+      `ALTER TABLE "comment" ADD CONSTRAINT "FK_c0354a9a009d3bb45a08655ce3b" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
     );
     await queryRunner.query(
       `ALTER TABLE "video" ADD CONSTRAINT "FK_74e27b13f8ac66f999400df12f6" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
     );
     await queryRunner.query(
-      `ALTER TABLE "video_catagory" ADD CONSTRAINT "FK_2375b95a79fb5d273fa79b13da5" FOREIGN KEY ("videoId") REFERENCES "video"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
+      `ALTER TABLE "video_catagory" ADD CONSTRAINT "FK_2375b95a79fb5d273fa79b13da5" FOREIGN KEY ("videoId") REFERENCES "video"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
     );
     await queryRunner.query(
-      `ALTER TABLE "video_catagory" ADD CONSTRAINT "FK_ed87bff4052ac2e2420ba531fc2" FOREIGN KEY ("catagoryId") REFERENCES "catagory"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
+      `ALTER TABLE "video_catagory" ADD CONSTRAINT "FK_ed87bff4052ac2e2420ba531fc2" FOREIGN KEY ("catagoryId") REFERENCES "catagory"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
     );
   }
 
@@ -86,10 +86,10 @@ export class initial1642651017239 implements MigrationInterface {
       `ALTER TABLE "video" DROP CONSTRAINT "FK_74e27b13f8ac66f999400df12f6"`
     );
     await queryRunner.query(
-      `ALTER TABLE "comment" DROP CONSTRAINT "FK_fae151444dcca85704ef1fbb285"`
+      `ALTER TABLE "comment" DROP CONSTRAINT "FK_c0354a9a009d3bb45a08655ce3b"`
     );
     await queryRunner.query(
-      `ALTER TABLE "comment" DROP CONSTRAINT "FK_c0354a9a009d3bb45a08655ce3b"`
+      `ALTER TABLE "comment" DROP CONSTRAINT "FK_fae151444dcca85704ef1fbb285"`
     );
     await queryRunner.query(
       `ALTER TABLE "comment" DROP CONSTRAINT "FK_73aac6035a70c5f0313c939f237"`
@@ -113,10 +113,10 @@ export class initial1642651017239 implements MigrationInterface {
       `ALTER TABLE "vote_comment" DROP CONSTRAINT "FK_0977824b6350e028b80edb35d88"`
     );
     await queryRunner.query(
-      `ALTER TABLE "subscribe" DROP CONSTRAINT "FK_ce4d1992337c8dc5e9d7173a2cd"`
+      `ALTER TABLE "subscribe" DROP CONSTRAINT "FK_44b06318cd760c6acf1ede92a91"`
     );
     await queryRunner.query(
-      `ALTER TABLE "subscribe" DROP CONSTRAINT "FK_44b06318cd760c6acf1ede92a91"`
+      `ALTER TABLE "subscribe" DROP CONSTRAINT "FK_ce4d1992337c8dc5e9d7173a2cd"`
     );
     await queryRunner.query(`DROP TABLE "catagory"`);
     await queryRunner.query(`DROP TABLE "video_catagory"`);

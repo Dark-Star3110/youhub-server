@@ -5,11 +5,10 @@ export const PORT = process.env.PORT || 8000;
 
 export const COOKIE_NAME = "refreshToken";
 export const COOKIE_OPTIONS: CookieOptions = {
-  domain: __prop__ ? process.env.CLIENT_DOMAINS : undefined,
-  httpOnly: true,
-  secure: false,
   maxAge: eval(process.env.REFRESH_TOKEN_EXPIRY) * 1000,
-  sameSite: "none",
+  httpOnly: true,
+  secure: __prop__,
+  sameSite: __prop__ ? "none" : "lax",
   signed: true,
 };
 

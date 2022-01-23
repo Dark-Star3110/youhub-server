@@ -2,21 +2,24 @@ import { Field, ID, InputType } from "type-graphql";
 
 @InputType()
 export class CreateVideoInput {
-  @Field(_type=>ID)
-  id: string
+  @Field((_type) => ID)
+  id: string;
 
   @Field()
-  title: string
+  title: string;
 
   @Field()
-  description: string
+  description: string;
 
-  @Field({nullable: true})
-  commentable: boolean
+  @Field({ nullable: true })
+  commentable: boolean;
 
-  @Field({nullable: true})
-  thumbnailUrl?: string
+  @Field({ nullable: true })
+  thumbnailUrl?: string;
 
   @Field()
-  size: string
+  size: string;
+
+  @Field((_type) => [ID!], { nullable: true })
+  categoriesId?: string[];
 }

@@ -1,3 +1,4 @@
+import { WatchLater } from "./../entities/WatchLater";
 import { VoteComment } from "./../entities/VoteComment";
 import { SubscribeStatus } from "./../types/graphql-response/SubscribeStatus";
 import { VoteVideo } from "./../entities/VoteVideo";
@@ -150,6 +151,18 @@ const batchGetThumbnail = async (videoIds: string[]) => {
   });
 };
 
+const batchGetWatchLaterStatus = async (conditions: VoteVideoCondition[]) => {
+  const watches = await WatchLater.findByIds(conditions);
+  return conditions.map((condition) => {
+    const watch = watches.find(
+      (watch) =>
+        watch.userId === condition.userId && watch.videoId === condition.videoId
+    );
+    if (watch) return true;
+    else return false;
+  });
+};
+
 export const buildDataLoaders = () => ({
   userLoader: new DataLoader<string, User | undefined>((userIds) =>
     batchGetUsers(userIds as string[])
@@ -187,5 +200,8 @@ export const buildDataLoaders = () => ({
   ),
   thumbnailLoader: new DataLoader<string, string | undefined>((videoIds) =>
     batchGetThumbnail(videoIds as string[])
+  ),
+  watchLaterStatusLoader: new DataLoader<VoteVideoCondition, boolean>(
+    (conditions) => batchGetWatchLaterStatus(conditions as VoteVideoCondition[])
   ),
 });

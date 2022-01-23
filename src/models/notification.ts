@@ -28,6 +28,7 @@ export class Notification {
   @Field((_type) => ID)
   _id!: mongoose.Types.ObjectId;
 
+  @Field()
   @prop()
   from: string;
 
