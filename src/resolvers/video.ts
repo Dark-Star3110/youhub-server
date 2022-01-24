@@ -345,7 +345,7 @@ class VideoResolver {
   @UseMiddleware(checkAuth)
   async videosVoted(
     @Arg("limit", (_type) => Int) limit: number,
-    @Arg("type") type: VoteType,
+    @Arg("type", (_type) => VoteType) type: VoteType,
     @Ctx() { req }: Context,
     @Arg("cursor", { nullable: true }) cursor?: string
   ): Promise<PaginatedVideos | undefined> {

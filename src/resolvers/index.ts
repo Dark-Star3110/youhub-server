@@ -1,3 +1,4 @@
+import { CategoryResolver } from "./category";
 import { CommentResolver } from "./comment";
 import { NonEmptyArray } from "type-graphql";
 import { HelloResolver } from "./hello";
@@ -11,6 +12,7 @@ const resolvers: NonEmptyArray<Function> | NonEmptyArray<string> = [
   VideoResolver,
   CommentResolver,
   NotifyResolver,
+  CategoryResolver,
 ];
 
 export { resolvers };
